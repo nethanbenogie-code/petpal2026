@@ -1,0 +1,777 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
+  <title>Arcade Games</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: #1a1a2e;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      font-family: system-ui, -apple-system, sans-serif;
+      color: #eee;
+      padding: 12px;
+    }
+    .container {
+      background: #16213e;
+      border-radius: 24px;
+      padding: 20px;
+      max-width: 800px;
+      width: 100%;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.8);
+    }
+    .tabs {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 16px;
+      flex-wrap: wrap;
+    }
+    .tab {
+      flex: 1;
+      padding: 10px 8px;
+      border: none;
+      border-radius: 12px;
+      background: #0f3460;
+      color: #aac;
+      font-weight: 700;
+      font-size: 14px;
+      cursor: pointer;
+      transition: 0.2s;
+      text-align: center;
+      min-width: 70px;
+    }
+    .tab.active {
+      background: #e94560;
+      color: #fff;
+      box-shadow: 0 4px 0 #a02040;
+    }
+    .game-wrapper {
+      background: #0a0a1a;
+      border-radius: 16px;
+      overflow: hidden;
+      position: relative;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 460px;
+    }
+    canvas {
+      display: block;
+      width: 100%;
+      height: auto;
+      aspect-ratio: 300 / 400; /* flexible */
+      max-height: 500px;
+      background: #0a0a1a;
+      touch-action: none;
+    }
+    .scoreboard {
+      display: flex;
+      justify-content: space-between;
+      padding: 8px 4px 4px;
+      font-size: 14px;
+      font-weight: 600;
+      color: #8af;
+      border-bottom: 1px solid #2a3a5a;
+      margin-top: 4px;
+    }
+    .scoreboard span {
+      background: #0f1f2f;
+      padding: 2px 12px;
+      border-radius: 20px;
+    }
+    .controls {
+      display: flex;
+      gap: 8px;
+      justify-content: center;
+      padding: 10px 0 4px;
+      flex-wrap: wrap;
+    }
+    .controls button {
+      padding: 6px 14px;
+      border: none;
+      border-radius: 8px;
+      background: #2a3a5a;
+      color: #cde;
+      font-weight: 700;
+      font-size: 13px;
+      cursor: pointer;
+      transition: 0.15s;
+      min-width: 44px;
+    }
+    .controls button:active {
+      transform: scale(0.92);
+      background: #e94560;
+    }
+    .controls .fire {
+      background: #e94560;
+      color: #fff;
+    }
+    .back-btn {
+      display: block;
+      margin: 12px auto 0;
+      padding: 10px 30px;
+      border: none;
+      border-radius: 30px;
+      background: #e94560;
+      color: #fff;
+      font-weight: 700;
+      font-size: 16px;
+      cursor: pointer;
+      transition: 0.2s;
+    }
+    .back-btn:active { transform: scale(0.95); }
+    .high-score {
+      color: #f7d774;
+      font-size: 13px;
+    }
+    @media (max-width: 500px) {
+      .container { padding: 12px; }
+      .tab { font-size: 12px; padding: 8px 4px; }
+      .controls button { font-size: 11px; padding: 4px 10px; }
+    }
+  </style>
+</head>
+<body>
+<div class="container">
+  <div class="tabs">
+    <button class="tab active" data-game="tetris">🧩 Tetris</button>
+    <button class="tab" data-game="galactica">🚀 Galactica</button>
+    <button class="tab" data-game="snake">🐍 Snake</button>
+  </div>
+
+  <div class="game-wrapper">
+    <canvas id="gameCanvas" width="300" height="400"></canvas>
+  </div>
+  <div class="scoreboard">
+    <span>Score: <span id="scoreDisplay">0</span></span>
+    <span class="high-score">🏆 <span id="highScoreDisplay">0</span></span>
+  </div>
+  <div class="controls" id="controls">
+    <!-- dynamic controls will be injected -->
+  </div>
+  <button class="back-btn" onclick="window.close()">← Back to Pet</button>
+</div>
+
+<script>
+  // ─── GAME ENGINE ───
+  const canvas = document.getElementById('gameCanvas');
+  const ctx = canvas.getContext('2d');
+  const scoreSpan = document.getElementById('scoreDisplay');
+  const highScoreSpan = document.getElementById('highScoreDisplay');
+
+  let currentGame = 'tetris';
+  let gameLoopId = null;
+  let gameState = null;
+
+  // High scores stored in localStorage
+  function getHighScore(game) {
+    return parseInt(localStorage.getItem('arcade_high_' + game) || '0');
+  }
+  function setHighScore(game, score) {
+    const old = getHighScore(game);
+    if (score > old) {
+      localStorage.setItem('arcade_high_' + game, String(score));
+      return true;
+    }
+    return false;
+  }
+
+  // ─── TETRIS ───
+  const TETRIS = {
+    COLS: 10, ROWS: 20, BLOCK_SIZE: 20,
+    PIECES: [
+      [[1,1,1,1]],
+      [[1,1],[1,1]],
+      [[0,1,0],[1,1,1]],
+      [[1,0,0],[1,1,1]],
+      [[0,0,1],[1,1,1]],
+      [[1,1,0],[0,1,1]],
+      [[0,1,1],[1,1,0]]
+    ],
+    COLORS: ['#00f0f0','#f0f000','#a000f0','#00f000','#f00000','#f0a000','#0000f0']
+  };
+
+  function initTetris() {
+    const g = {
+      grid: Array.from({ length: TETRIS.ROWS }, () => Array(TETRIS.COLS).fill(0)),
+      piece: null,
+      score: 0,
+      gameOver: false,
+      dropCounter: 0,
+      dropInterval: 500,
+      lastTime: 0,
+    };
+    spawnPiece(g);
+    return g;
+  }
+
+  function spawnPiece(g) {
+    const idx = Math.floor(Math.random() * TETRIS.PIECES.length);
+    const shape = TETRIS.PIECES[idx].map(row => [...row]);
+    g.piece = {
+      shape,
+      x: Math.floor((TETRIS.COLS - shape[0].length) / 2),
+      y: 0,
+      color: TETRIS.COLORS[idx],
+    };
+    if (collision(g, g.piece.shape, g.piece.x, g.piece.y)) {
+      g.gameOver = true;
+    }
+  }
+
+  function collision(g, shape, offX, offY) {
+    for (let r = 0; r < shape.length; r++) {
+      for (let c = 0; c < shape[r].length; c++) {
+        if (shape[r][c]) {
+          const x = offX + c;
+          const y = offY + r;
+          if (x < 0 || x >= TETRIS.COLS || y >= TETRIS.ROWS || y < 0) return true;
+          if (y >= 0 && g.grid[y][x] !== 0) return true;
+        }
+      }
+    }
+    return false;
+  }
+
+  function mergePiece(g) {
+    const { shape, x, y, color } = g.piece;
+    for (let r = 0; r < shape.length; r++) {
+      for (let c = 0; c < shape[r].length; c++) {
+        if (shape[r][c]) {
+          const px = x + c;
+          const py = y + r;
+          if (py >= 0) g.grid[py][px] = color;
+        }
+      }
+    }
+  }
+
+  function clearRows(g) {
+    let cleared = 0;
+    for (let r = g.grid.length - 1; r >= 0; ) {
+      if (g.grid[r].every(cell => cell !== 0)) {
+        g.grid.splice(r, 1);
+        g.grid.unshift(Array(TETRIS.COLS).fill(0));
+        cleared++;
+        // stay on same row
+      } else {
+        r--;
+      }
+    }
+    if (cleared > 0) {
+      g.score += [0, 40, 100, 300, 1200][cleared] || 0;
+      updateScore(g.score);
+    }
+  }
+
+  function movePiece(g, dx, dy) {
+    if (g.gameOver || !g.piece) return false;
+    const newX = g.piece.x + dx;
+    const newY = g.piece.y + dy;
+    if (!collision(g, g.piece.shape, newX, newY)) {
+      g.piece.x = newX;
+      g.piece.y = newY;
+      return true;
+    }
+    if (dy === 1) { // lock piece
+      mergePiece(g);
+      clearRows(g);
+      spawnPiece(g);
+      if (g.gameOver) {
+        const high = setHighScore('tetris', g.score);
+        if (high) updateHighScore('tetris');
+      }
+    }
+    return false;
+  }
+
+  function rotatePiece(g) {
+    if (g.gameOver || !g.piece) return;
+    const old = g.piece.shape;
+    const rotated = old[0].map((_, idx) => old.map(row => row[idx]).reverse());
+    if (!collision(g, rotated, g.piece.x, g.piece.y)) {
+      g.piece.shape = rotated;
+    }
+  }
+
+  function drawTetris(g) {
+    const bs = TETRIS.BLOCK_SIZE;
+    ctx.clearRect(0, 0, 300, 400);
+    // grid
+    for (let r = 0; r < TETRIS.ROWS; r++) {
+      for (let c = 0; c < TETRIS.COLS; c++) {
+        if (g.grid[r][c]) {
+          ctx.fillStyle = g.grid[r][c];
+          ctx.fillRect(c*bs, r*bs, bs-1, bs-1);
+          ctx.fillStyle = 'rgba(255,255,255,0.2)';
+          ctx.fillRect(c*bs+2, r*bs+2, bs-5, bs-5);
+        }
+      }
+    }
+    // piece
+    if (g.piece) {
+      const { shape, x, y, color } = g.piece;
+      for (let r = 0; r < shape.length; r++) {
+        for (let c = 0; c < shape[r].length; c++) {
+          if (shape[r][c]) {
+            const px = (x + c) * bs;
+            const py = (y + r) * bs;
+            ctx.fillStyle = color;
+            ctx.fillRect(px, py, bs-1, bs-1);
+            ctx.fillStyle = 'rgba(255,255,255,0.2)';
+            ctx.fillRect(px+2, py+2, bs-5, bs-5);
+          }
+        }
+      }
+    }
+    if (g.gameOver) {
+      ctx.fillStyle = 'rgba(0,0,0,0.6)';
+      ctx.fillRect(0, 150, 300, 60);
+      ctx.fillStyle = '#fff';
+      ctx.font = 'bold 24px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText('GAME OVER', 150, 190);
+    }
+  }
+
+  // ─── GALACTICA (Shooter) ───
+  function initGalactica() {
+    return {
+      player: { x: 140, y: 360, w: 20, h: 20 },
+      bullets: [],
+      enemies: [],
+      enemyBullets: [],
+      score: 0,
+      lives: 3,
+      gameOver: false,
+      enemySpawnTimer: 0,
+      fireCooldown: 0,
+      keys: { left: false, right: false, fire: false },
+      stars: Array.from({ length: 30 }, () => ({ x: rand(0,300), y: rand(0,400), s: rand(0.5,2), speed: rand(0.5,2) })),
+    };
+  }
+
+  function rand(a,b) { return Math.random()*(b-a)+a; }
+
+  function updateGalactica(g, dt) {
+    if (g.gameOver) return;
+    const p = g.player;
+    if (g.keys.left) p.x -= 3;
+    if (g.keys.right) p.x += 3;
+    p.x = clamp(p.x, 0, 280);
+    g.fireCooldown = Math.max(0, g.fireCooldown - 1);
+    if (g.keys.fire && g.fireCooldown === 0) {
+      g.bullets.push({ x: p.x+8, y: p.y-8, w:4, h:12, speed:6 });
+      g.fireCooldown = 10;
+    }
+    // bullets
+    for (const b of g.bullets) b.y -= b.speed;
+    g.bullets = g.bullets.filter(b => b.y > -10);
+    // enemies
+    g.enemySpawnTimer--;
+    if (g.enemySpawnTimer <= 0) {
+      const e = { x: rand(10,270), y: -20, w: 20, h: 20, speed: 1.2 + Math.random()*0.8, hp: 1 };
+      g.enemies.push(e);
+      g.enemySpawnTimer = 30 + Math.floor(Math.random()*30);
+    }
+    for (const e of g.enemies) {
+      e.y += e.speed;
+      // enemy fire
+      if (Math.random() < 0.01 && e.y > 20) {
+        g.enemyBullets.push({ x: e.x+8, y: e.y+20, w:4, h:8, speed: 2 + Math.random() });
+      }
+    }
+    g.enemies = g.enemies.filter(e => e.y < 420);
+    // collisions: bullets → enemies
+    for (const b of g.bullets) {
+      for (const e of g.enemies) {
+        if (b.x < e.x+e.w && b.x+b.w > e.x && b.y < e.y+e.h && b.y+b.h > e.y) {
+          b.y = -100;
+          e.hp--;
+          if (e.hp <= 0) {
+            const idx = g.enemies.indexOf(e);
+            if (idx > -1) g.enemies.splice(idx, 1);
+            g.score += 10;
+            updateScore(g.score);
+          }
+          break;
+        }
+      }
+    }
+    // enemy bullets → player
+    for (const b of g.enemyBullets) {
+      if (b.x < p.x+p.w && b.x+b.w > p.x && b.y < p.y+p.h && b.y+b.h > p.y) {
+        b.y = 500;
+        g.lives--;
+        if (g.lives <= 0) {
+          g.gameOver = true;
+          const high = setHighScore('galactica', g.score);
+          if (high) updateHighScore('galactica');
+        }
+      }
+    }
+    g.enemyBullets = g.enemyBullets.filter(b => b.y < 420);
+    // stars
+    for (const s of g.stars) { s.y += s.speed; if (s.y > 400) { s.y = 0; s.x = rand(0,300); } }
+    // draw
+    drawGalactica(g);
+  }
+
+  function drawGalactica(g) {
+    ctx.clearRect(0, 0, 300, 400);
+    // stars
+    for (const s of g.stars) {
+      ctx.fillStyle = `rgba(255,255,255,${0.4+Math.random()*0.3})`;
+      ctx.beginPath();
+      ctx.arc(s.x, s.y, s.s, 0, Math.PI*2);
+      ctx.fill();
+    }
+    // player
+    const p = g.player;
+    ctx.fillStyle = '#4af';
+    ctx.shadowColor = '#4af';
+    ctx.shadowBlur = 12;
+    ctx.beginPath();
+    ctx.moveTo(p.x+p.w/2, p.y);
+    ctx.lineTo(p.x+p.w, p.y+p.h);
+    ctx.lineTo(p.x, p.y+p.h);
+    ctx.closePath();
+    ctx.fill();
+    ctx.shadowBlur = 0;
+    // bullets
+    ctx.fillStyle = '#ffd93d';
+    for (const b of g.bullets) {
+      ctx.fillRect(b.x, b.y, b.w, b.h);
+    }
+    // enemies
+    for (const e of g.enemies) {
+      ctx.fillStyle = '#e94560';
+      ctx.shadowColor = '#e94560';
+      ctx.shadowBlur = 8;
+      ctx.fillRect(e.x, e.y, e.w, e.h);
+      // eyes
+      ctx.fillStyle = '#fff';
+      ctx.fillRect(e.x+4, e.y+4, 4, 4);
+      ctx.fillRect(e.x+12, e.y+4, 4, 4);
+      ctx.shadowBlur = 0;
+    }
+    // enemy bullets
+    ctx.fillStyle = '#ff6b6b';
+    for (const b of g.enemyBullets) {
+      ctx.beginPath();
+      ctx.arc(b.x+2, b.y+2, 3, 0, Math.PI*2);
+      ctx.fill();
+    }
+    if (g.gameOver) {
+      ctx.fillStyle = 'rgba(0,0,0,0.6)';
+      ctx.fillRect(0, 150, 300, 60);
+      ctx.fillStyle = '#fff';
+      ctx.font = 'bold 24px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText('GAME OVER', 150, 190);
+    }
+    // lives
+    ctx.fillStyle = '#f44';
+    ctx.font = '16px sans-serif';
+    ctx.textAlign = 'left';
+    ctx.fillText('❤️'.repeat(g.lives), 8, 24);
+  }
+
+  function clamp(v, min, max) { return Math.min(max, Math.max(min, v)); }
+
+  // ─── SNAKE ───
+  function initSnake() {
+    return {
+      snake: [{x: 10, y: 10}],
+      dir: {x: 1, y: 0},
+      nextDir: {x: 1, y: 0},
+      food: {x: 15, y: 10},
+      score: 0,
+      gameOver: false,
+      moveTimer: 0,
+      moveInterval: 150,
+    };
+  }
+
+  function updateSnake(g, dt) {
+    if (g.gameOver) return;
+    g.moveTimer += dt;
+    if (g.moveTimer < g.moveInterval) return;
+    g.moveTimer = 0;
+    // apply direction
+    g.dir = {...g.nextDir};
+    const head = {...g.snake[0]};
+    head.x += g.dir.x;
+    head.y += g.dir.y;
+    // wrap
+    if (head.x < 0) head.x = 29;
+    if (head.x >= 30) head.x = 0;
+    if (head.y < 0) head.y = 19;
+    if (head.y >= 20) head.y = 0;
+
+    // check self-collision
+    if (g.snake.some(seg => seg.x === head.x && seg.y === head.y)) {
+      g.gameOver = true;
+      const high = setHighScore('snake', g.score);
+      if (high) updateHighScore('snake');
+      drawSnake(g);
+      return;
+    }
+    g.snake.unshift(head);
+    // check food
+    if (head.x === g.food.x && head.y === g.food.y) {
+      g.score += 10;
+      updateScore(g.score);
+      // new food
+      let newFood;
+      do {
+        newFood = { x: Math.floor(Math.random()*30), y: Math.floor(Math.random()*20) };
+      } while (g.snake.some(seg => seg.x === newFood.x && seg.y === newFood.y));
+      g.food = newFood;
+    } else {
+      g.snake.pop();
+    }
+    drawSnake(g);
+  }
+
+  function drawSnake(g) {
+    ctx.clearRect(0, 0, 300, 400);
+    const cellSize = 10;
+    // grid
+    for (let i = 0; i < 30; i++) {
+      for (let j = 0; j < 20; j++) {
+        ctx.fillStyle = (i+j)%2===0 ? '#1a2a3a' : '#0f1f2f';
+        ctx.fillRect(i*cellSize, j*cellSize, cellSize, cellSize);
+      }
+    }
+    // snake
+    for (let i = 0; i < g.snake.length; i++) {
+      const s = g.snake[i];
+      ctx.fillStyle = i === 0 ? '#6f0' : '#4a8';
+      ctx.fillRect(s.x*cellSize+1, s.y*cellSize+1, cellSize-2, cellSize-2);
+    }
+    // food
+    ctx.fillStyle = '#f44';
+    ctx.shadowColor = '#f44';
+    ctx.shadowBlur = 10;
+    ctx.beginPath();
+    ctx.arc(g.food.x*cellSize+cellSize/2, g.food.y*cellSize+cellSize/2, cellSize/2-2, 0, Math.PI*2);
+    ctx.fill();
+    ctx.shadowBlur = 0;
+    if (g.gameOver) {
+      ctx.fillStyle = 'rgba(0,0,0,0.6)';
+      ctx.fillRect(0, 150, 300, 60);
+      ctx.fillStyle = '#fff';
+      ctx.font = 'bold 24px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText('GAME OVER', 150, 190);
+    }
+  }
+
+  // ─── SCORE UPDATE ───
+  function updateScore(val) {
+    scoreSpan.textContent = val;
+  }
+  function updateHighScore(game) {
+    highScoreSpan.textContent = getHighScore(game);
+  }
+
+  // ─── GAME LOOP ───
+  let lastTimestamp = 0;
+
+  function gameLoop(timestamp) {
+    const dt = Math.min(timestamp - lastTimestamp, 100);
+    lastTimestamp = timestamp;
+
+    if (currentGame === 'tetris') {
+      const g = gameState;
+      if (!g.gameOver) {
+        g.dropCounter += dt;
+        if (g.dropCounter > g.dropInterval) {
+          g.dropCounter = 0;
+          movePiece(g, 0, 1);
+          updateScore(g.score);
+        }
+        drawTetris(g);
+      } else {
+        drawTetris(g);
+      }
+    } else if (currentGame === 'galactica') {
+      updateGalactica(gameState, dt);
+      updateScore(gameState.score);
+    } else if (currentGame === 'snake') {
+      updateSnake(gameState, dt);
+      updateScore(gameState.score);
+    }
+
+    gameLoopId = requestAnimationFrame(gameLoop);
+  }
+
+  // ─── SWITCH GAME ───
+  function switchGame(game) {
+    currentGame = game;
+    if (gameLoopId) cancelAnimationFrame(gameLoopId);
+    // reset state
+    if (game === 'tetris') {
+      gameState = initTetris();
+      updateScore(gameState.score);
+      updateHighScore('tetris');
+      drawTetris(gameState);
+      document.getElementById('controls').innerHTML = `
+        <button data-key="left">◀</button>
+        <button data-key="right">▶</button>
+        <button data-key="down">▼</button>
+        <button data-key="rotate">↻</button>
+        <button data-key="drop">⬇⬇</button>
+      `;
+    } else if (game === 'galactica') {
+      gameState = initGalactica();
+      updateScore(gameState.score);
+      updateHighScore('galactica');
+      // bind keys
+      const g = gameState;
+      const keyDown = (e) => {
+        if (e.key === 'ArrowLeft') g.keys.left = true;
+        if (e.key === 'ArrowRight') g.keys.right = true;
+        if (e.key === ' ') { e.preventDefault(); g.keys.fire = true; }
+      };
+      const keyUp = (e) => {
+        if (e.key === 'ArrowLeft') g.keys.left = false;
+        if (e.key === 'ArrowRight') g.keys.right = false;
+        if (e.key === ' ') { e.preventDefault(); g.keys.fire = false; }
+      };
+      window._galacticaListeners = { keyDown, keyUp };
+      document.removeEventListener('keydown', keyDown);
+      document.removeEventListener('keyup', keyUp);
+      document.addEventListener('keydown', keyDown);
+      document.addEventListener('keyup', keyUp);
+      document.getElementById('controls').innerHTML = `
+        <button data-key="left">◀</button>
+        <button data-key="right">▶</button>
+        <button class="fire" data-key="fire">🔥 FIRE</button>
+      `;
+      drawGalactica(g);
+    } else if (game === 'snake') {
+      gameState = initSnake();
+      updateScore(gameState.score);
+      updateHighScore('snake');
+      drawSnake(gameState);
+      document.getElementById('controls').innerHTML = `
+        <button data-key="up">▲</button>
+        <button data-key="left">◀</button>
+        <button data-key="down">▼</button>
+        <button data-key="right">▶</button>
+      `;
+    }
+    // bind control buttons
+    document.querySelectorAll('#controls [data-key]').forEach(btn => {
+      const key = btn.dataset.key;
+      btn.addEventListener('touchstart', (e) => { e.preventDefault(); handleKeyPress(key, true); });
+      btn.addEventListener('touchend', (e) => { e.preventDefault(); handleKeyPress(key, false); });
+      btn.addEventListener('mousedown', () => handleKeyPress(key, true));
+      btn.addEventListener('mouseup', () => handleKeyPress(key, false));
+    });
+    // keyboard listeners for current game
+    // we'll handle globally but delegate
+    if (game !== 'galactica') {
+      // remove galactica listeners
+      if (window._galacticaListeners) {
+        document.removeEventListener('keydown', window._galacticaListeners.keyDown);
+        document.removeEventListener('keyup', window._galacticaListeners.keyUp);
+        delete window._galacticaListeners;
+      }
+    }
+    // restart loop
+    lastTimestamp = performance.now();
+    gameLoopId = requestAnimationFrame(gameLoop);
+  }
+
+  function handleKeyPress(key, pressed) {
+    if (currentGame === 'tetris') {
+      const g = gameState;
+      if (pressed) {
+        if (key === 'left') movePiece(g, -1, 0);
+        else if (key === 'right') movePiece(g, 1, 0);
+        else if (key === 'down') movePiece(g, 0, 1);
+        else if (key === 'rotate') rotatePiece(g);
+        else if (key === 'drop') { while (!movePiece(g, 0, 1)) {} }
+        updateScore(g.score);
+        drawTetris(g);
+      }
+    } else if (currentGame === 'galactica') {
+      const g = gameState;
+      if (key === 'left') g.keys.left = pressed;
+      if (key === 'right') g.keys.right = pressed;
+      if (key === 'fire') g.keys.fire = pressed;
+    } else if (currentGame === 'snake') {
+      const g = gameState;
+      if (pressed) {
+        const dir = {x:0,y:0};
+        if (key === 'up') dir = {x:0, y:-1};
+        else if (key === 'down') dir = {x:0, y:1};
+        else if (key === 'left') dir = {x:-1, y:0};
+        else if (key === 'right') dir = {x:1, y:0};
+        // prevent reverse
+        if (dir.x !== -g.dir.x || dir.y !== -g.dir.y) {
+          g.nextDir = dir;
+        }
+      }
+    }
+  }
+
+  // ─── TAB SWITCHING ───
+  document.querySelectorAll('.tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+      document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+      tab.classList.add('active');
+      const game = tab.dataset.game;
+      switchGame(game);
+    });
+  });
+
+  // ─── KEYBOARD GLOBAL ───
+  document.addEventListener('keydown', (e) => {
+    const tag = e.target.tagName?.toLowerCase() || '';
+    if (tag === 'input' || tag === 'textarea' || tag === 'select' || e.target.isContentEditable) return;
+    const keyMap = {
+      'ArrowLeft': 'left', 'ArrowRight': 'right', 'ArrowUp': 'up', 'ArrowDown': 'down',
+      ' ': 'fire', 'r': 'rotate', 'Space': 'fire',
+    };
+    const mapped = keyMap[e.key] || null;
+    if (mapped) {
+      e.preventDefault();
+      handleKeyPress(mapped, true);
+      // for galactica, we also need to hold
+      if (currentGame === 'galactica' && (mapped === 'left' || mapped === 'right' || mapped === 'fire')) {
+        // already handled via keydown listener
+      }
+    }
+  });
+  document.addEventListener('keyup', (e) => {
+    const tag = e.target.tagName?.toLowerCase() || '';
+    if (tag === 'input' || tag === 'textarea' || tag === 'select' || e.target.isContentEditable) return;
+    const keyMap = {
+      'ArrowLeft': 'left', 'ArrowRight': 'right', 'ArrowUp': 'up', 'ArrowDown': 'down',
+      ' ': 'fire', 'r': 'rotate',
+    };
+    const mapped = keyMap[e.key] || null;
+    if (mapped) {
+      e.preventDefault();
+      if (currentGame === 'galactica') {
+        const g = gameState;
+        if (mapped === 'left') g.keys.left = false;
+        if (mapped === 'right') g.keys.right = false;
+        if (mapped === 'fire') g.keys.fire = false;
+      }
+    }
+  });
+
+  // ─── START ───
+  switchGame('tetris');
+</script>
+</body>
+</html>
