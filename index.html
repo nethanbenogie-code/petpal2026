@@ -3174,22 +3174,9 @@
 
         /* ─── MINI-GAMES ─── */
         function openGames() {
-            openModal("🎮 Mini-games", `
-            <div class="menu-list">
-              <button class="menu-item" id="game-catch"><span>🎯 Catch the treat</span><span class="arrow">›</span></button>
-              <button class="menu-item" id="game-memory"><span>🃏 Memory match</span><span class="arrow">›</span></button>
-              <button class="menu-item" id="game-hunt"><span>🏹 Hunt</span><span class="arrow">›</span></button>
-            </div>
-          `);
-            setTimeout(() => {
-                document.getElementById("game-catch").onclick = () => { closeModal();
-                    playCatch(); };
-                document.getElementById("game-memory").onclick = () => { closeModal();
-                    playMemory(); };
-                document.getElementById("game-hunt").onclick = () => { closeModal();
-                    startHunt(); };
-            }, 50);
-        }
+  // Open games.html in a new window/tab
+  window.open('games.html', '_blank', 'width=600,height=700,resizable=yes');
+}
 
         let catchGame = null;
 
