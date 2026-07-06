@@ -232,6 +232,7 @@
             align-items: center;
             justify-content: center;
             pointer-events: auto;
+            /* transform will be set by JS */;
         }
         #pet-wrap:active {
             cursor: grabbing;
@@ -2347,22 +2348,47 @@
             applyWeather();
         }
 
-        /* ─── DRAGGABLE PET ─── */
-        let isDragging = false;
-        let dragOffsetX = 0,
-            dragOffsetY = 0;
-        let petX = 50,
-            petY = 50;
-
+        /* ─── DRAGGABLE PET (FIXED) ─── */
         function initDraggable() {
             const wrap = document.getElementById("pet-wrap");
             const stage = document.getElementById("pet-stage");
+
+            // Helper: set position by centering the wrap at (centerX%, centerY%)
+            function setPos(centerXPercent, centerYPercent) {
+                const stageRect = stage.getBoundingClientRect();
+                const wrapRect = wrap.getBoundingClientRect();
+                const wrapW = (wrapRect.width / stageRect.width) * 100;
+                const wrapH = (wrapRect.height / stageRect.height) * 100;
+                let left = centerXPercent - wrapW / 2;
+                let top = centerYPercent - wrapH / 2;
+                left = Math.max(0, Math.min(100 - wrapW, left));
+                top = Math.max(0, Math.min(100 - wrapH, top));
+                wrap.style.left = left + "%";
+                wrap.style.top = top + "%";
+                wrap.style.transform = "none";
+                state.petX = centerXPercent;
+                state.petY = centerYPercent;
+            }
+
+            // Restore saved position or center
+            if (state.petX !== undefined && state.petX !== null) {
+                setPos(state.petX, state.petY);
+            } else {
+                setPos(50, 50);
+            }
+
+            let isDragging = false;
+            let dragOffsetX = 0,
+                dragOffsetY = 0;
 
             function getPos(e) {
                 const rect = stage.getBoundingClientRect();
                 const clientX = e.touches ? e.touches[0].clientX : e.clientX;
                 const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-                return { x: ((clientX - rect.left) / rect.width) * 100, y: ((clientY - rect.top) / rect.height) * 100 };
+                return {
+                    x: ((clientX - rect.left) / rect.width) * 100,
+                    y: ((clientY - rect.top) / rect.height) * 100
+                };
             }
 
             function onStart(e) {
@@ -2371,8 +2397,10 @@
                 const cx = (e.touches ? e.touches[0].clientX : e.clientX) - rect.left;
                 const cy = (e.touches ? e.touches[0].clientY : e.clientY) - rect.top;
                 const wrapRect = wrap.getBoundingClientRect();
-                dragOffsetX = cx - (wrapRect.left - rect.left);
-                dragOffsetY = cy - (wrapRect.top - rect.top);
+                const wrapCenterX = wrapRect.left + wrapRect.width / 2 - rect.left;
+                const wrapCenterY = wrapRect.top + wrapRect.height / 2 - rect.top;
+                dragOffsetX = cx - wrapCenterX;
+                dragOffsetY = cy - wrapCenterY;
                 isDragging = true;
                 wrap.classList.add("dragging");
             }
@@ -2383,19 +2411,17 @@
                 const rect = stage.getBoundingClientRect();
                 const cx = (e.touches ? e.touches[0].clientX : e.clientX) - rect.left;
                 const cy = (e.touches ? e.touches[0].clientY : e.clientY) - rect.top;
+                let centerX = ((cx - dragOffsetX) / rect.width) * 100;
+                let centerY = ((cy - dragOffsetY) / rect.height) * 100;
+                // Clamp to stage edges considering wrap size
                 const wrapRect = wrap.getBoundingClientRect();
-                const wrapW = wrapRect.width;
-                const wrapH = wrapRect.height;
-                let x = ((cx - dragOffsetX) / rect.width) * 100;
-                let y = ((cy - dragOffsetY) / rect.height) * 100;
-                x = clamp(x, 0, 100 - (wrapW / rect.width) * 100);
-                y = clamp(y, 0, 100 - (wrapH / rect.height) * 100);
-                petX = x;
-                petY = y;
-                state.petX = x;
-                state.petY = y;
-                wrap.style.left = x + "%";
-                wrap.style.top = y + "%";
+                const wrapW = (wrapRect.width / rect.width) * 100;
+                const wrapH = (wrapRect.height / rect.height) * 100;
+                centerX = Math.max(wrapW / 2, Math.min(100 - wrapW / 2, centerX));
+                centerY = Math.max(wrapH / 2, Math.min(100 - wrapH / 2, centerY));
+                setPos(centerX, centerY);
+                // Save continuously while dragging
+                save();
             }
 
             function onEnd(e) {
@@ -2413,19 +2439,6 @@
             document.addEventListener("mouseup", onEnd);
             document.addEventListener("touchend", onEnd);
             document.addEventListener("touchcancel", onEnd);
-
-            if (state.petX !== undefined) {
-                petX = state.petX;
-                petY = state.petY;
-                wrap.style.left = petX + "%";
-                wrap.style.top = petY + "%";
-            } else {
-                wrap.style.left = "50%";
-                wrap.style.top = "50%";
-                wrap.style.transform = "translate(-50%, -50%)";
-                petX = 50;
-                petY = 50;
-            }
         }
 
         /* ─── PLAYMATES ─── */
@@ -2442,8 +2455,15 @@
                 div.appendChild(label);
                 const angle = (idx / state.playmates.length) * Math.PI * 2 - Math.PI / 2;
                 const dist = 60 + idx * 8;
-                div.style.left = `calc(${petX}% + ${Math.cos(angle) * dist}px)`;
-                div.style.top = `calc(${petY}% + ${Math.sin(angle) * dist}px)`;
+                // Get pet center in stage percent
+                const wrap = document.getElementById("pet-wrap");
+                const stage = document.getElementById("pet-stage");
+                const wrapRect = wrap.getBoundingClientRect();
+                const stageRect = stage.getBoundingClientRect();
+                const petCX = ((wrapRect.left + wrapRect.width / 2 - stageRect.left) / stageRect.width) * 100;
+                const petCY = ((wrapRect.top + wrapRect.height / 2 - stageRect.top) / stageRect.height) * 100;
+                div.style.left = `calc(${petCX}% + ${Math.cos(angle) * dist}px)`;
+                div.style.top = `calc(${petCY}% + ${Math.sin(angle) * dist}px)`;
                 div.style.transform = "translate(-50%, -50%)";
                 div.style.fontSize = Math.max(20, 34 - idx * 2) + "px";
                 div.style.zIndex = 5 - idx;
@@ -3174,9 +3194,22 @@
 
         /* ─── MINI-GAMES ─── */
         function openGames() {
-  // Open games.html in a new window/tab
-  window.open('games.html', '_blank', 'width=600,height=700,resizable=yes');
-}
+            openModal("🎮 Mini-games", `
+            <div class="menu-list">
+              <button class="menu-item" id="game-catch"><span>🎯 Catch the treat</span><span class="arrow">›</span></button>
+              <button class="menu-item" id="game-memory"><span>🃏 Memory match</span><span class="arrow">›</span></button>
+              <button class="menu-item" id="game-hunt"><span>🏹 Hunt</span><span class="arrow">›</span></button>
+            </div>
+          `);
+            setTimeout(() => {
+                document.getElementById("game-catch").onclick = () => { closeModal();
+                    playCatch(); };
+                document.getElementById("game-memory").onclick = () => { closeModal();
+                    playMemory(); };
+                document.getElementById("game-hunt").onclick = () => { closeModal();
+                    startHunt(); };
+            }, 50);
+        }
 
         let catchGame = null;
 
