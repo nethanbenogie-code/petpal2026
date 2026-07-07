@@ -1,43 +1,36 @@
-/* PetPal Service Worker — cache-first for full offline support */
-const CACHE = "petpal-v1";
+const CACHE_NAME = "petpal-v4";
 const ASSETS = [
-  "./",
-  "./index.html",
-  "./manifest.json",
-  "./icon.svg",
-  "./icon-192.png",
-  "./icon-512.png"
+  "index.html",
+  "games.html",
+  "manifest.json",
+  "icon.svg"
 ];
 
-self.addEventListener("install", (event) => {
-  event.waitUntil(
-    caches.open(CACHE).then((cache) => cache.addAll(ASSETS).catch(() => {}))
+// Install – cache assets
+self.addEventListener("install", (e) => {
+  e.waitUntil(
+    caches.open(CACHE_NAME)
+      .then((cache) => cache.addAll(ASSETS))
+      .then(() => self.skipWaiting())
   );
-  self.skipWaiting();
 });
 
-self.addEventListener("activate", (event) => {
-  event.waitUntil(
-    caches.keys().then((keys) =>
-      Promise.all(keys.filter((k) => k !== CACHE).map((k) => caches.delete(k)))
-    )
+// Activate – clean old caches
+self.addEventListener("activate", (e) => {
+  e.waitUntil(
+    caches.keys().then((keys) => {
+      return Promise.all(
+        keys.filter((key) => key !== CACHE_NAME)
+          .map((key) => caches.delete(key))
+      );
+    }).then(() => self.clients.claim())
   );
-  self.clients.claim();
 });
 
-self.addEventListener("fetch", (event) => {
-  const req = event.request;
-  if (req.method !== "GET") return;
-  event.respondWith(
-    caches.match(req).then((cached) => {
-      if (cached) return cached;
-      return fetch(req)
-        .then((res) => {
-          const copy = res.clone();
-          caches.open(CACHE).then((cache) => cache.put(req, copy).catch(() => {}));
-          return res;
-        })
-        .catch(() => cached || caches.match("./index.html"));
-    })
+// Fetch – serve from cache, fallback to network
+self.addEventListener("fetch", (e) => {
+  e.respondWith(
+    caches.match(e.request)
+      .then((cached) => cached || fetch(e.request))
   );
 });
