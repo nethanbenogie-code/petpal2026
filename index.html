@@ -3964,10 +3964,11 @@
         setInterval(drawPet, 500);
         setInterval(save, 5000);
 
-        document.addEventListener("visibilitychange", () => {
-            if (!document.hidden) { tick();
-                updateUI(); }
-        });
+        // At the very end of your script, after all definitions:
+document.addEventListener('DOMContentLoaded', function() {
+  initDraggable();
+  // other init code...
+  });
 
         if ("serviceWorker" in navigator) {
             window.addEventListener("load", () => {
