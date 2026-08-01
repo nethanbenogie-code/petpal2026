@@ -484,12 +484,19 @@
   function clamp(v, min, max) { return Math.min(max, Math.max(min, v)); }
 
   // ─── SNAKE ───
+  // The canvas is 300x400. The board was 30x20 cells at 10px = 300x200, so the
+  // snake was confined to the top half and wrapped mid-canvas against an
+  // invisible edge. 40 rows fills it.
+  const SNAKE_CELL = 10;
+  const SNAKE_COLS = 30;
+  const SNAKE_ROWS = 40;
+
   function initSnake() {
     return {
-      snake: [{x: 10, y: 10}],
+      snake: [{x: 10, y: 20}],
       dir: {x: 1, y: 0},
       nextDir: {x: 1, y: 0},
-      food: {x: 15, y: 10},
+      food: {x: 20, y: 20},
       score: 0,
       gameOver: false,
       moveTimer: 0,
@@ -508,13 +515,18 @@
     head.x += g.dir.x;
     head.y += g.dir.y;
     // wrap
-    if (head.x < 0) head.x = 29;
-    if (head.x >= 30) head.x = 0;
-    if (head.y < 0) head.y = 19;
-    if (head.y >= 20) head.y = 0;
+    if (head.x < 0) head.x = SNAKE_COLS - 1;
+    if (head.x >= SNAKE_COLS) head.x = 0;
+    if (head.y < 0) head.y = SNAKE_ROWS - 1;
+    if (head.y >= SNAKE_ROWS) head.y = 0;
 
-    // check self-collision
-    if (g.snake.some(seg => seg.x === head.x && seg.y === head.y)) {
+    const willGrow = (head.x === g.food.x && head.y === g.food.y);
+
+    /* Self-collision. The tail segment is skipped unless the snake is about to
+       grow, because that cell is vacated on this same tick — chasing your own
+       tail was scored as a crash into a square that was already empty. */
+    const body = willGrow ? g.snake : g.snake.slice(0, -1);
+    if (body.some(seg => seg.x === head.x && seg.y === head.y)) {
       g.gameOver = true;
       const high = setHighScore('snake', g.score);
       if (high) updateHighScore('snake');
@@ -522,14 +534,12 @@
       return;
     }
     g.snake.unshift(head);
-    // check food
-    if (head.x === g.food.x && head.y === g.food.y) {
+    if (willGrow) {
       g.score += 10;
       updateScore(g.score);
-      // new food
       let newFood;
       do {
-        newFood = { x: Math.floor(Math.random()*30), y: Math.floor(Math.random()*20) };
+        newFood = { x: Math.floor(Math.random()*SNAKE_COLS), y: Math.floor(Math.random()*SNAKE_ROWS) };
       } while (g.snake.some(seg => seg.x === newFood.x && seg.y === newFood.y));
       g.food = newFood;
     } else {
@@ -540,10 +550,10 @@
 
   function drawSnake(g) {
     ctx.clearRect(0, 0, 300, 400);
-    const cellSize = 10;
+    const cellSize = SNAKE_CELL;
     // grid
-    for (let i = 0; i < 30; i++) {
-      for (let j = 0; j < 20; j++) {
+    for (let i = 0; i < SNAKE_COLS; i++) {
+      for (let j = 0; j < SNAKE_ROWS; j++) {
         ctx.fillStyle = (i+j)%2===0 ? '#1a2a3a' : '#0f1f2f';
         ctx.fillRect(i*cellSize, j*cellSize, cellSize, cellSize);
       }
@@ -564,11 +574,13 @@
     ctx.shadowBlur = 0;
     if (g.gameOver) {
       ctx.fillStyle = 'rgba(0,0,0,0.6)';
-      ctx.fillRect(0, 150, 300, 60);
+      ctx.fillRect(0, 170, 300, 62);
       ctx.fillStyle = '#fff';
       ctx.font = 'bold 24px sans-serif';
       ctx.textAlign = 'center';
-      ctx.fillText('GAME OVER', 150, 190);
+      ctx.fillText('GAME OVER', 150, 202);
+      ctx.font = '12px sans-serif';
+      ctx.fillText('tap 🐍 Snake to play again', 150, 222);
     }
   }
 
@@ -710,12 +722,17 @@
     } else if (currentGame === 'snake') {
       const g = gameState;
       if (pressed) {
-        const dir = {x:0,y:0};
+        // Was `const dir` reassigned on the next line: TypeError on every
+        // direction key, so the snake could only ever travel right.
+        let dir = null;
         if (key === 'up') dir = {x:0, y:-1};
         else if (key === 'down') dir = {x:0, y:1};
         else if (key === 'left') dir = {x:-1, y:0};
         else if (key === 'right') dir = {x:1, y:0};
-        // prevent reverse
+        if (!dir) return;
+        // No reversing into your own neck. Compared against the direction of
+        // the last move, not nextDir — two quick turns within one tick could
+        // otherwise chain into a 180.
         if (dir.x !== -g.dir.x || dir.y !== -g.dir.y) {
           g.nextDir = dir;
         }
