@@ -16,16 +16,35 @@ import { state, save, LOCATIONS } from './state.js';
 import { toast, speak, chirp } from './ui.js';
 import { grantXp } from './rpg.js';
 import { openModal, closeModal } from './journal.js';
-import { monstersForZone, bossForZone, scaleMonster } from './monsters.js';
+import { monstersForZone, bossForZone, scaleMonster, byId, MONSTERS } from './monsters.js';
+import { startBattle, battleOpen } from './battleui.js';
 import { level as petLevel } from './rpg.js';
 
 const HANDOFF = "petpal.battle.result";
 
+/* Fights run on the pet's own stage now (battleui.js) rather than in a second
+   window, so the location backdrop stays behind them and rewards apply
+   directly to `state`. battle.html still works standalone if opened by hand;
+   drainBattleResults() below stays so anything it left behind is still
+   honoured. */
 export function openBattle(kind, zone, monsterId) {
-    const p = new URLSearchParams({ kind: kind || "random", zone: zone || state.scene || "home" });
-    if (monsterId) p.set("m", monsterId);
-    window.open("battle.html?" + p.toString(), "petpal-battle",
-        "width=520,height=760,resizable=yes");
+    const mon = monsterId ? byId(monsterId) : null;
+    const spec = mon || pickFor(kind, zone);
+    if (!spec) { toast("Nothing to fight here"); return; }
+    startBattle(spec, kind);
+}
+
+function pickFor(kind, zone) {
+    const z = zone || state.scene || "home";
+    if (kind === "boss") return bossForZone(z);
+    if (kind === "daily") {
+        // deterministic per calendar day
+        const day = Math.floor(Date.now() / 86400000);
+        const pool = MONSTERS.filter(m => m.tier >= 2);
+        return pool[day % pool.length] || MONSTERS[0];
+    }
+    const pool = monstersForZone(z);
+    return pool[Math.floor(Math.random() * pool.length)];
 }
 
 /** Apply anything battle.html left for us. Safe to call repeatedly. */
@@ -68,6 +87,7 @@ export function drainBattleResults() {
    It is now "go find a monster and fight it", which also makes the Space
    unlock (5+ hunt catches) reachable for the first time. */
 export function huntFight() {
+    if (battleOpen()) return;
     if (state.sleeping) { speak("... zzz"); return; }
     if (state.energy < 15) { speak("Too tired to hunt..."); return; }
     const zone = state.scene || "home";
@@ -128,7 +148,7 @@ let lastEncounter = 0;
 const MIN_GAP_MS = 3 * 60 * 1000;
 
 export function maybeRandomEncounter() {
-    if (state.sleeping || !state.encountersOn) return;
+    if (state.sleeping || !state.encountersOn || battleOpen()) return;
     const zone = state.scene || "home";
     if (zone === "home" || zone === "bath" || zone === "night") return;
     if (Date.now() - lastEncounter < MIN_GAP_MS) return;

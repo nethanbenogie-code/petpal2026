@@ -18,6 +18,8 @@ import { chirp, initAudio, initTTS, isBubbleShowing, log, speak, toast, toggleLi
 import { start as start3d, stop as stop3d, is3dActive } from './pet3d.js';
 import { renderLevel } from './rpg.js';
 import { drainBattleResults, huntFight, bossFight, dailyFight, maybeRandomEncounter, openBattle } from './encounters.js';
+import { closeBattle, battleOpen } from './battleui.js';
+import { checkEventReminders } from './calendar.js';
 
 /* Switches the pet between the three.js canvas and the SVG. The `three` class
    on #pet-wrap is the single source of truth: CSS shows the right element and
@@ -140,6 +142,7 @@ function tick() {
 
     updateWeather();
     maybeRandomEncounter();
+    checkEventReminders();
     updateUI();
     save();
 }
@@ -194,6 +197,7 @@ if (IS_APP_SHELL) {
     document.getElementById("shop-btn").onclick = openShop;
     document.getElementById("camera-btn").onclick = takePhoto;
     document.getElementById("journal-btn").onclick = openJournal;
+    document.getElementById("bresult-close").onclick = closeBattle;
 }
 /* #pet is pointer-events:none, so the click listener that used to live
    here never fired — tapping the pet did nothing. Petting is now

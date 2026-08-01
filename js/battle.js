@@ -10,6 +10,7 @@
    underneath it. */
 
 import { scaleMonster } from './monsters.js';
+import { WEAPON_SKILLS } from './weapons.js';
 
 /* Skills are earned, not bought: each maps to a trick the pet already knows,
    so training has a combat payoff. Everyone always has Attack. */
@@ -61,6 +62,10 @@ export function createBattle(petStats, monsterBase, opts = {}) {
     for (const t of Object.values(opts.tricks || {})) {
         if (t && SKILLS[t.action]) known.add(t.action);
     }
+    // the equipped weapon's signature move, available only while it is held
+    if (opts.weapon && opts.weapon.skill && WEAPON_SKILLS[opts.weapon.skill]) {
+        known.add(opts.weapon.skill);
+    }
     return {
         pet: { ...petStats, hp: petStats.maxHp, defBuff: 1, focused: false },
         mon,
@@ -80,6 +85,16 @@ function push(b, text, kind) { b.log.push({ text, kind: kind || "info", turn: b.
 function monsterTurn(b) {
     if (b.over) return;
     const m = b.mon;
+    /* Stunned monsters lose the turn entirely. Cleared here rather than at the
+       top of the player's turn so a stun always costs exactly one enemy
+       action — chaining two zaps can't silently drop one. */
+    if (m.stunned) {
+        m.stunned = false;
+        b.pet.defBuff = 1;
+        m.atkMod = 1;
+        push(b, `${m.name} is stunned and can't move!`, "skill");
+        return;
+    }
     // A cornered monster hits harder — gives late fights a shape.
     const desperate = m.hp / m.maxHp < 0.3;
     const mult = (desperate ? 1.35 : 1) * (m.atkMod || 1);
@@ -117,22 +132,36 @@ export function playerAction(b, action, arg) {
         push(b, `Attack hits ${m.name} for ${dmg}!`, "hit-mon");
 
     } else if (action === "skill") {
-        const s = SKILLS[arg];
+        const s = SKILLS[arg] || WEAPON_SKILLS[arg];
         if (!s || !b.skills.includes(arg) || b.cooldowns[arg] > 0) {
             b.turn--; return b;                       // not usable; costs nothing
         }
         b.cooldowns[arg] = s.cd;
         push(b, `${s.emoji} ${s.text(b.pet.name || "Your pet")}`, "skill");
         if (s.mult > 0) {
-            const dmg = damage(b.pet.atk, m.def, s.mult, b.pet.focused, m.level);
-            b.pet.focused = false;
-            m.hp = Math.max(0, m.hp - dmg);
-            push(b, `${m.name} takes ${dmg}!`, "hit-mon");
+            /* Multi-hit weapons roll each strike separately so variance and the
+               defence curve apply per hit; sunder softens defence for this
+               swing only. */
+            const hits = s.kind === "multi" ? (s.hits || 2) : 1;
+            // pierce ignores armour outright; sunder just softens it
+            const defMul = s.kind === "pierce" ? 0 : s.kind === "sunder" ? (s.sunder || 1) : 1;
+            let total = 0;
+            for (let i = 0; i < hits && m.hp > 0; i++) {
+                const dmg = damage(b.pet.atk, m.def * defMul, s.mult, b.pet.focused, m.level);
+                b.pet.focused = false;
+                m.hp = Math.max(0, m.hp - dmg);
+                total += dmg;
+            }
+            push(b, hits > 1 ? `${hits} hits — ${total} damage!` : `${m.name} takes ${total}!`, "hit-mon");
         }
         if (s.kind === "heal") {
             const healed = Math.round(b.pet.maxHp * s.heal);
             b.pet.hp = Math.min(b.pet.maxHp, b.pet.hp + healed);
             push(b, `Recovered ${healed} HP.`, "heal");
+        }
+        if (s.kind === "shock" && Math.random() < (s.stun || 0)) {
+            m.stunned = true;
+            push(b, `${m.name} is paralysed!`, "skill");
         }
         if (s.kind === "buff") b.pet.defBuff = s.buff;
         if (s.kind === "weaken") m.atkMod = s.weaken;
@@ -185,8 +214,10 @@ export function rewards(b, firstClear) {
     };
 }
 
+export function skillOf(id) { return SKILLS[id] || WEAPON_SKILLS[id] || null; }
+
 export function skillList(b) {
     return b.skills.map(id => ({
-        id, ...SKILLS[id], ready: !(b.cooldowns[id] > 0), cooling: b.cooldowns[id] || 0,
+        id, ...skillOf(id), ready: !(b.cooldowns[id] > 0), cooling: b.cooldowns[id] || 0,
     }));
 }

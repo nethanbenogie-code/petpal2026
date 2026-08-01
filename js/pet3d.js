@@ -99,6 +99,12 @@ function buildPet(colors) {
         g.add(antenna);
     }
 
+    // equipped hat / glasses / neckwear
+    for (const slot of ["hat", "eyes", "neck"]) {
+        const spec = ACC3D[state.equipped && state.equipped[slot]];
+        if (spec) g.add(buildAccessory(spec));
+    }
+
     // contact shadow — a flat disc, keeps the pet from floating
     const shadow = new THREE.Mesh(new THREE.CircleGeometry(0.85, 28),
         new THREE.MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: 0.18 }));
@@ -109,9 +115,97 @@ function buildPet(colors) {
     return { group: g, torso, eyeL, eyeR, mouth, armL, armR, legL, legR, antenna, shadow };
 }
 
+/* ── accessories in 3D ────────────────────────────────────────────────────
+   These existed only as SVG, so with the 3D pet on — which is the default —
+   buying and equipping a hat changed absolutely nothing on screen. Mount
+   points are read off the model above: the head crests at y≈0.95, the eyes sit
+   at (±0.32, 0.18, 0.82) and bulge to z≈1.0, the body's base is near y=-0.9. */
+const ACC3D = {
+    tophat: { parts: [
+        { geo: "cylinder", r: 0.62, h: 0.07, pos: [0, 0.95, 0], col: 0x1a1a1a },
+        { geo: "cylinder", r: 0.4, h: 0.62, pos: [0, 1.29, 0], col: 0x1a1a1a },
+        { geo: "cylinder", r: 0.41, h: 0.12, pos: [0, 1.06, 0], col: 0xd64545 },
+    ] },
+    crown: { parts: [
+        { geo: "cylinder", r: 0.44, h: 0.16, pos: [0, 1.0, 0], col: 0xf7d774 },
+        { geo: "cone", r: 0.12, h: 0.34, pos: [0, 1.25, 0], col: 0xf7d774 },
+        { geo: "cone", r: 0.11, h: 0.28, pos: [-0.31, 1.2, 0], col: 0xf7d774 },
+        { geo: "cone", r: 0.11, h: 0.28, pos: [0.31, 1.2, 0], col: 0xf7d774 },
+        { geo: "sphere", r: 0.08, pos: [0, 1.45, 0], col: 0xd64545 },
+    ] },
+    gradcap: { parts: [
+        { geo: "cylinder", r: 0.36, h: 0.2, pos: [0, 1.02, 0], col: 0x1a1a1a },
+        { geo: "box", w: 1.0, h: 0.06, d: 1.0, pos: [0, 1.15, 0], rot: [0, 0.4, 0], col: 0x1a1a1a },
+        { geo: "sphere", r: 0.07, pos: [0.42, 0.98, 0.28], col: 0xf7d774 },
+    ] },
+    cap: { parts: [
+        { geo: "sphere", r: 0.45, scale: [1, 0.62, 1], pos: [0, 0.94, 0], col: 0xd64545 },
+        { geo: "box", w: 0.55, h: 0.06, d: 0.42, pos: [0, 0.88, 0.5], col: 0xd64545 },
+    ] },
+    flower: { parts: [
+        { geo: "sphere", r: 0.13, pos: [-0.34, 1.0, 0.22], col: 0xff8fa6 },
+        { geo: "sphere", r: 0.13, pos: [-0.1, 1.05, 0.3], col: 0xff8fa6 },
+        { geo: "sphere", r: 0.13, pos: [-0.22, 0.88, 0.36], col: 0xff8fa6 },
+        { geo: "sphere", r: 0.13, pos: [-0.44, 0.9, 0.3], col: 0xff8fa6 },
+        { geo: "sphere", r: 0.1, pos: [-0.26, 0.98, 0.34], col: 0xf7d774 },
+    ] },
+    star: { parts: [
+        { geo: "octa", r: 0.26, pos: [0, 1.16, 0], col: 0xf7d774, glow: true },
+        { geo: "cylinder", r: 0.03, h: 0.24, pos: [0, 0.95, 0], col: 0xb58900 },
+    ] },
+    shades: { parts: [
+        { geo: "box", w: 0.42, h: 0.24, d: 0.08, pos: [-0.32, 0.2, 0.96], col: 0x1a1a1a },
+        { geo: "box", w: 0.42, h: 0.24, d: 0.08, pos: [0.32, 0.2, 0.96], col: 0x1a1a1a },
+        { geo: "box", w: 0.24, h: 0.06, d: 0.06, pos: [0, 0.22, 0.96], col: 0x1a1a1a },
+    ] },
+    nerd: { parts: [
+        { geo: "torus", r: 0.23, tube: 0.045, pos: [-0.32, 0.19, 0.95], col: 0x1a1a1a },
+        { geo: "torus", r: 0.23, tube: 0.045, pos: [0.32, 0.19, 0.95], col: 0x1a1a1a },
+        { geo: "box", w: 0.2, h: 0.05, d: 0.05, pos: [0, 0.19, 0.95], col: 0x1a1a1a },
+    ] },
+    bow: { parts: [
+        { geo: "cone", r: 0.2, h: 0.3, pos: [-0.26, -0.62, 0.72], rot: [1.57, 0, 1.57], col: 0xff5f8f },
+        { geo: "cone", r: 0.2, h: 0.3, pos: [0.26, -0.62, 0.72], rot: [1.57, 0, -1.57], col: 0xff5f8f },
+        { geo: "sphere", r: 0.11, pos: [0, -0.62, 0.75], col: 0xff8fa6 },
+    ] },
+    scarf: { parts: [
+        { geo: "torus", r: 0.66, tube: 0.15, pos: [0, -0.6, 0.05], rot: [1.45, 0, 0], col: 0xd64545 },
+        { geo: "box", w: 0.22, h: 0.5, d: 0.1, pos: [0.2, -0.95, 0.6], rot: [0.3, 0, 0.15], col: 0xd64545 },
+    ] },
+};
+
+function buildAccessory(spec) {
+    const g = new THREE.Group();
+    for (const p of spec.parts) {
+        let geo;
+        switch (p.geo) {
+            case "box": geo = new THREE.BoxGeometry(p.w || 0.2, p.h || 0.2, p.d || 0.2); break;
+            case "cone": geo = new THREE.ConeGeometry(p.r || 0.15, p.h || 0.3, 16); break;
+            case "cylinder": geo = new THREE.CylinderGeometry(p.r || 0.2, p.r || 0.2, p.h || 0.2, 22); break;
+            case "torus": geo = new THREE.TorusGeometry(p.r || 0.2, p.tube || 0.05, 10, 26); break;
+            case "octa": geo = new THREE.OctahedronGeometry(p.r || 0.2, 0); break;
+            default: geo = new THREE.SphereGeometry(p.r || 0.12, 18, 14);
+        }
+        const mat = new THREE.MeshStandardMaterial({
+            color: p.col, roughness: 0.5, metalness: 0.15,
+            ...(p.glow ? { emissive: p.col, emissiveIntensity: 0.5 } : {}),
+        });
+        const m = new THREE.Mesh(geo, mat);
+        if (p.pos) m.position.set(p.pos[0], p.pos[1], p.pos[2]);
+        if (p.rot) m.rotation.set(p.rot[0], p.rot[1], p.rot[2]);
+        if (p.scale) m.scale.set(p.scale[0], p.scale[1], p.scale[2]);
+        g.add(m);
+    }
+    return g;
+}
+
+/* Equipped gear is part of the signature. Without it the model is never
+   rebuilt when you change a hat, which is the other half of why equipping
+   appeared to do nothing. */
 function currentSig() {
     const c = state.color || {};
-    return [getStage().name, c.body, c.outline].join("|");
+    const e = state.equipped || {};
+    return [getStage().name, c.body, c.outline, e.hat, e.eyes, e.neck].join("|");
 }
 
 export function start() {

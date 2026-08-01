@@ -16,7 +16,7 @@ No build step and no npm install — the only dependency is three.js, vendored i
 - Five life stages — Egg → Baby → Kid → Teen → Adult — reached by real elapsed time
 - **Levels 1–100** earned by playing, with combat stats that grow alongside —
   see [Levels](#levels)
-- **Turn-based battles** against 17 monsters and bosses, all modelled in 3D —
+- **Turn-based battles** against 32 monsters and bosses, all modelled in 3D —
   see [Battles](#battles)
 - Six needs that drain continuously: Full, Hydration, Clean, Rest, Fun, Health
 - Moods driven by those stats, with matching faces and animations
@@ -42,6 +42,7 @@ No build step and no npm install — the only dependency is three.js, vendored i
 - Talk to it and it learns your vocabulary, then works your words into its own chatter
 - Optional speech synthesis (it talks back) and voice input (speech recognition)
 - Save and recall contacts by chatting — see [Contacts by chat](#contacts-by-chat)
+- Schedule events and get reminded by chatting — see [Calendar by chat](#calendar-by-chat)
 
 **Extras**
 - Journal with notes, appointments, contacts and diary entries
@@ -114,6 +115,67 @@ phone number told twice could end up in its idle chatter.
 
 ---
 
+## Calendar by chat
+
+Schedule an event and the pet reminds you when it's due, even if the app was
+closed right through the moment — you get a "you missed" catch-up ping the
+next time it's open, once, ever. Reuses `state.appointments`, the same store
+**Journal → 📅 Appts** reads, so anything scheduled by chat shows up
+there too, and anything added through that form gets a reminder if it has a
+time.
+
+**Creating**
+
+```
+remind me to walk the dog tomorrow at 6pm
+remind me about the dentist on friday at 3pm
+remember to buy milk today
+schedule team sync on 8/5 at 14:30
+book a haircut for aug 10
+don't let me forget mom's birthday on september 3
+add event: Concert | 2026-12-24 | 8pm | Arena
+remind me to call grandma in 3 days
+```
+
+Dates understood: today/tomorrow, weekday names (with "this" or "next"),
+month-day ("aug 10", "10 august"), numeric (`8/5`, `2026-08-05`), and relative
+("in 3 days", "in a week"). Times: `6pm`, `3:30pm`, `14:30`, noon, midnight.
+
+Creation is gated behind **both** a recognisable opener (remind me to/about,
+remember to/that, schedule, book, don't let me forget, or the explicit
+`add event:` form) **and** a date the parser can actually resolve — a bare
+hour with no am/pm ("at 9") is genuinely ambiguous and is left unresolved
+rather than guessed, and the event is still created from the date alone.
+
+Two openers that felt natural at first — bare "i have ..." and "there's ..."
+— were cut before shipping: "i have a headache today" and "there's a bug in
+the shooter today" both start with those words and both contain "today",
+and would have silently become calendar entries. Verified with a battery of
+20 phrasings, split evenly between things that must create an event, things
+with a trigger but no date (must reply but create nothing), and ordinary
+sentences with no trigger at all (must be completely silent) — all 20 landed
+correctly.
+
+**Reading back and cancelling**
+
+```
+what's on my calendar
+what do i have tomorrow
+next appointment
+cancel team sync
+```
+
+`cancel`/`delete`/`remove` reply only when something actually matches —
+unlike contacts' `forget`, these are common words in ordinary chat, so a
+miss stays silent instead of announcing "I don't have anything called that"
+to a sentence that was never about the calendar.
+
+**Reminders** fire once per appointment, checked every second: exactly on
+time if the app is open, or as a "you missed" catch-up the moment it's
+reopened if it wasn't. Only appointments with a time ping — a date alone is a
+day marker, not an alarm. If **⚙ Menu → 🔔 Notifications** is on, a real
+system notification fires too, so it reaches you even in another tab.
+
 ## Levels
 
 Two progressions run side by side and they are **not** the same thing:
@@ -142,8 +204,9 @@ battles.
 
 ## Battles
 
-Fights happen in `battle.html`, a separate window with its own 3D arena — your
-actual pet model facing an actual monster model.
+Fights happen **on the pet's own stage**, so the location backdrop, weather and
+decor stay visible behind them — your actual pet model facing an actual monster
+model, in the park, in the rain, in space.
 
 **Starting a fight**
 - **⚔️ Hunt** — seek out a monster themed to wherever you are
@@ -158,7 +221,7 @@ Slam hit hard, Lullaby heals, Brace raises defence, Taunt weakens the enemy,
 Dazzle blunts its next hit, Focus loads the next strike. Food from your
 inventory heals mid-fight. Bosses can't be fled.
 
-**11 monsters and 6 bosses**, none of them sprites — each is a list of
+**24 monsters and 8 bosses**, none of them sprites — each is a list of
 primitive shapes assembled at runtime, same as the pet. Adding one is a data
 edit, not an art job.
 
@@ -171,6 +234,14 @@ supposed to matter.
 
 Losing costs nothing but pride and pays a quarter of the XP. Fleeing pays
 nothing.
+
+## Arcade controls
+
+Tetris, Galactica and Snake share one round joystick — drag the knob or tap
+the glowing chevrons, both work. Tetris also fires on a **centre tap** for a
+hard drop, so the whole game plays from one control. `js/joystick.js` is a
+small reusable widget (Pointer Events, so a drag survives your thumb sliding
+off the knob) that any future game in the arcade can reuse.
 
 ## Locations
 
@@ -232,6 +303,8 @@ js/
   pet3d.js        three.js pet model, animation and face
   rpg.js          XP curve, levels 1–100, derived combat stats
   monsters.js     bestiary + the primitive-part recipe for each 3D model
+  weapons.js      equippable weapons, their skills and 3D models
+  battleui.js     the in-stage 3D arena and battle HUD
   battle.js       turn-based combat engine (pure logic, no DOM)
   encounters.js   how fights start, and how rewards get home
   main.js         UI refresh, one-second tick, bindings, boot
@@ -326,3 +399,41 @@ degrade quietly where unsupported.
 ## License
 
 Not yet specified — add one before publishing if you want others to reuse it.
+
+## Weapons
+
+Eight weapons in **🛍 Shop → 🗡 Arms**, each with a signature battle skill that
+exists only while it is equipped — Slash, Rend, Guard Break, Quake, Zap, Beam,
+Starfall. Two carry mechanics nothing else has: **⚡ Zap** has a 50% chance to
+stun, costing the monster its whole turn, and **🔆 Beam** ignores armour
+completely — measured at 2.79x damage against the most armoured monster in the
+game versus 1.78x against the softest.
+
+Zap and Beam are the two **ranged** weapons — real geometry fired across the
+arena instead of a melee lunge. Zap forks three jittered lightning strands at
+the monster and flashes on impact; Beam swings a solid cylinder onto the line
+of fire with a muzzle flare and an impact burst. Effects are timed meshes
+added straight to the battle scene and torn down on their own clock, so a
+fight that ends mid-flash cleans up with it — verified with nothing left
+behind even when the battle is closed abruptly while a bolt is still in the
+air.
+They are built from primitives like everything else and are held in the pet's
+hand in the arena.
+
+Bonuses are **percentages of the pet's own stats, never flat numbers**. Flat
+values were tried first and broke exactly as the monsters did before they were
+re-anchored: +18 attack is enormous beside a level-25 pet's 43 and trivial
+beside a level-100 pet's 155, so the same Warhammer measured 82% against a boss
+at L25 and 62% at L60. Percentages make one balance pass hold at every level.
+
+Measured win rates, flat from level 10 to 100:
+
+| | tier 1 | tier 2 | tier 3 | boss |
+| --- | --- | --- | --- | --- |
+| bare hands | 100% | 80% | 45% | 7% |
+| Wooden Sword | 100% | 97% | 86% | 15% |
+| Iron Claws | 100% | 99% | 100% | 18% |
+| Warhammer | 100% | 100% | 100% | 50% |
+| Zap Rod | 100% | 99% | 97% | 27% |
+| Laser Blaster | 100% | 100% | 100% | 64% |
+| Star Blade | 100% | 100% | 100% | 81% |

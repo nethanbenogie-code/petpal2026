@@ -3,6 +3,7 @@
 
 import { bath, pet } from './actions.js';
 import { grantXp, XP } from './rpg.js';
+import { battleOpen } from './battleui.js';
 import { checkAchievements, spendCoins } from './economy.js';
 import { closeModal } from './journal.js';
 import { updateUI } from './main.js';
@@ -82,6 +83,7 @@ function petBusy() {
     const wrap = petWrapEl();
     if (!wrap) return true;
     if (state.sleeping || mv.dragging || document.hidden) return true;
+    if (battleOpen()) return true;   // the pet is in the arena, not on the stage
     if (getStage().name === "Egg") return true;
     const modal = document.getElementById("modal-bg");
     if (modal && modal.classList.contains("show")) return true;

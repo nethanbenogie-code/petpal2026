@@ -8,6 +8,7 @@ import { updateUI } from './main.js';
 import { buyPlaymate } from './petmove.js';
 import { PLAYMATES, SHOP_ACCESSORIES, SHOP_FOODS, save, state } from './state.js';
 import { chirp, toast } from './ui.js';
+import { WEAPONS, RARITY, WEAPON_SKILLS, weaponBlurb } from './weapons.js';
 /* ─── SHOP ─── */
 let shopTab = "foods";
 
@@ -25,6 +26,7 @@ function openShop() {
     <div class="shop-tabs">
       <button class="shop-tab ${shopTab==='foods'?'active':''}" data-tab="foods">🍎 Foods</button>
       <button class="shop-tab ${shopTab==='accessories'?'active':''}" data-tab="accessories">🎩 Gear</button>
+      <button class="shop-tab ${shopTab==='weapons'?'active':''}" data-tab="weapons">🗡 Arms</button>
       <button class="shop-tab ${shopTab==='playmates'?'active':''}" data-tab="playmates">🐾 Friends</button>
     </div>
     <div id="shop-list-container">${renderShopList()}</div>
@@ -56,6 +58,22 @@ function renderShopList() {
         <div class="item-icon">${a.icon}</div>
         <div class="item-name">${a.name}</div>
         <div class="item-price">${owned ? (equipped ? "worn" : "tap to wear") : `${a.price} 💰`}</div>
+      </div>`;
+    }).join("")}</div>`;
+    } else if (shopTab === "weapons") {
+        /* Weapons show what they DO, not just what they cost — the whole point
+           of the slot is that a hammer and claws play differently. */
+        return `<div class="shop-list wide">${WEAPONS.map(w => {
+      const owned = w.price === 0 || (state.ownedWeapons || []).includes(w.id);
+      const equipped = state.equipped.weapon === w.id;
+      const sk = w.skill ? WEAPON_SKILLS[w.skill] : null;
+      return `<div class="shop-item weapon ${owned?'owned':''} ${equipped?'equipped':''}" data-weapon="${w.id}">
+        <div class="item-icon">${sk ? sk.emoji : "🪵"}</div>
+        <div class="item-name">${w.name}</div>
+        <div class="wstats">${weaponBlurb(w)}</div>
+        ${sk ? `<div class="wskill">${sk.emoji} ${sk.name}</div>` : `<div class="wskill dim">no skill</div>`}
+        <div class="item-price" style="color:${RARITY[w.rarity].colour};">
+          ${equipped ? "equipped" : owned ? "tap to equip" : `${w.price} 💰`}</div>
       </div>`;
     }).join("")}</div>`;
     } else {
@@ -107,6 +125,30 @@ function bindShopItems() {
                     chirp("love");
                     openShop();
                 }
+            }
+        };
+    });
+    document.querySelectorAll("[data-weapon]").forEach(el => {
+        el.onclick = () => {
+            const id = el.dataset.weapon;
+            const w = WEAPONS.find(x => x.id === id);
+            if (!w) return;
+            const owned = w.price === 0 || (state.ownedWeapons || []).includes(id);
+            if (owned) {
+                state.equipped.weapon = state.equipped.weapon === id ? null : id;
+                save();
+                updateUI();
+                chirp("beep");
+                openShop();
+            } else if (spendCoins(w.price)) {
+                state.ownedWeapons = state.ownedWeapons || [];
+                state.ownedWeapons.push(id);
+                state.equipped.weapon = id;
+                save();
+                updateUI();
+                toast(`Got ${w.name}!`);
+                chirp("love");
+                openShop();
             }
         };
     });

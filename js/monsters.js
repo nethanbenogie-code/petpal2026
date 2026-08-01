@@ -162,6 +162,167 @@ export const MONSTERS = [
             { geo: "sphere", r: 0.22, scale: [1.4, 1, 0.6], pos: [0, 0.45, 0.75], mat: "eye" },
         ],
     }),
+    // ── second wave ───────────────────────────────────────────────────────
+    M("dustbunny", "Dust Bunny", {
+        zones: ["home"], tier: 1,
+        hp: 18, atk: 5, def: 2, spd: 8, xp: 16, coins: 5,
+        body: "#c9c2b4", accent: "#8a8375", quip: "*drifts out from under the sofa*",
+        parts: [
+            { geo: "sphere", r: 0.8, scale: [1.1, 0.9, 1], pos: [0, 0, 0], mat: "body" },
+            { geo: "cone", r: 0.12, h: 0.5, pos: [-0.22, 0.85, 0], rot: [0, 0, 0.2], mat: "body" },
+            { geo: "cone", r: 0.12, h: 0.5, pos: [0.22, 0.85, 0], rot: [0, 0, -0.2], mat: "body" },
+            { geo: "sphere", r: 0.11, pos: [-0.24, 0.16, 0.72], mat: "eye" },
+            { geo: "sphere", r: 0.11, pos: [0.24, 0.16, 0.72], mat: "eye" },
+        ],
+    }),
+    M("sudsling", "Sudsling", {
+        zones: ["bath"], tier: 1,
+        hp: 20, atk: 6, def: 3, spd: 6, xp: 17, coins: 6,
+        body: "#bfe6f5", accent: "#7fc4dd", quip: "*pops threateningly*",
+        parts: [
+            { geo: "sphere", r: 0.75, pos: [0, 0, 0], mat: "body" },
+            { geo: "sphere", r: 0.4, pos: [-0.55, 0.55, 0.1], mat: "body" },
+            { geo: "sphere", r: 0.32, pos: [0.6, 0.45, -0.1], mat: "body" },
+            { geo: "sphere", r: 0.11, pos: [-0.2, 0.1, 0.68], mat: "eye" },
+            { geo: "sphere", r: 0.11, pos: [0.2, 0.1, 0.68], mat: "eye" },
+        ],
+    }),
+    M("pigeon", "Street Pigeon", {
+        zones: ["city"], tier: 1,
+        hp: 21, atk: 7, def: 2, spd: 10, xp: 19, coins: 7,
+        body: "#8f98a8", accent: "#4a5260", quip: "*stares with no fear whatsoever*",
+        parts: [
+            { geo: "sphere", r: 0.7, scale: [1, 1.1, 1.25], pos: [0, 0, 0], mat: "body" },
+            { geo: "sphere", r: 0.38, pos: [0, 0.75, 0.35], mat: "body" },
+            { geo: "cone", r: 0.11, h: 0.3, pos: [0, 0.72, 0.78], rot: [1.57, 0, 0], mat: "accent" },
+            { geo: "sphere", r: 0.1, pos: [-0.19, 0.85, 0.6], mat: "eye" },
+            { geo: "sphere", r: 0.1, pos: [0.19, 0.85, 0.6], mat: "eye" },
+        ],
+    }),
+    M("hallmonitor", "Hall Monitor", {
+        zones: ["school"], tier: 2,
+        hp: 42, atk: 12, def: 8, spd: 7, xp: 35, coins: 14,
+        body: "#d6c9a8", accent: "#b04a4a", quip: "Where is your pass?",
+        parts: [
+            { geo: "box", w: 1.0, h: 1.4, d: 0.55, pos: [0, 0, 0], mat: "body" },
+            { geo: "sphere", r: 0.44, pos: [0, 1.1, 0], mat: "body" },
+            { geo: "box", w: 0.9, h: 0.22, d: 0.6, pos: [0, -0.2, 0], mat: "accent" },
+            { geo: "cylinder", r: 0.05, h: 0.5, pos: [0.6, 0.35, 0.2], mat: "accent" },
+            { geo: "sphere", r: 0.11, pos: [-0.19, 1.16, 0.4], mat: "eye" },
+            { geo: "sphere", r: 0.11, pos: [0.19, 1.16, 0.4], mat: "eye" },
+        ],
+    }),
+    M("bargain", "Bargain Wraith", {
+        zones: ["mall"], tier: 2,
+        hp: 38, atk: 14, def: 6, spd: 9, xp: 36, coins: 18,
+        body: "#e6b8f0", accent: "#ff5f8f", quip: "FIFTY PERCENT OFF. FOREVER.",
+        parts: [
+            { geo: "cone", r: 0.85, h: 1.7, pos: [0, -0.1, 0], rot: [3.14, 0, 0], mat: "body" },
+            { geo: "sphere", r: 0.46, pos: [0, 0.9, 0], mat: "body" },
+            { geo: "box", w: 0.7, h: 0.45, d: 0.1, pos: [0.75, 0.3, 0.2], rot: [0, 0, -0.3], mat: "accent" },
+            { geo: "sphere", r: 0.13, pos: [-0.2, 0.95, 0.42], mat: "eye" },
+            { geo: "sphere", r: 0.13, pos: [0.2, 0.95, 0.42], mat: "eye" },
+        ],
+    }),
+    M("sandcrawler", "Sand Crawler", {
+        zones: ["beach"], tier: 2,
+        hp: 45, atk: 11, def: 9, spd: 6, xp: 34, coins: 13,
+        body: "#e8d5a8", accent: "#b39a63", quip: "*erupts from the sand*",
+        parts: [
+            { geo: "sphere", r: 1.0, scale: [1.2, 0.6, 1], pos: [0, -0.2, 0], mat: "body" },
+            { geo: "cone", r: 0.35, h: 0.9, pos: [0, 0.55, 0.2], mat: "accent" },
+            { geo: "cylinder", r: 0.06, h: 0.6, pos: [-0.85, 0.25, 0.3], rot: [0, 0, 0.5], mat: "accent" },
+            { geo: "cylinder", r: 0.06, h: 0.6, pos: [0.85, 0.25, 0.3], rot: [0, 0, -0.5], mat: "accent" },
+            { geo: "sphere", r: 0.12, pos: [-0.25, 0.1, 0.78], mat: "eye" },
+            { geo: "sphere", r: 0.12, pos: [0.25, 0.1, 0.78], mat: "eye" },
+        ],
+    }),
+    M("sanitizer", "Sanitizer Unit", {
+        zones: ["hospital"], tier: 2,
+        hp: 44, atk: 12, def: 10, spd: 5, xp: 36, coins: 15,
+        body: "#dff0f5", accent: "#4aa8d8", quip: "DETECTING CONTAMINANT.",
+        parts: [
+            { geo: "cylinder", r: 0.6, h: 1.5, pos: [0, 0, 0], mat: "body" },
+            { geo: "sphere", r: 0.5, pos: [0, 0.95, 0], mat: "body" },
+            { geo: "torus", r: 0.68, tube: 0.08, pos: [0, 0.1, 0], rot: [1.57, 0, 0], mat: "accent" },
+            { geo: "cylinder", r: 0.08, h: 0.4, pos: [0, 1.55, 0], mat: "accent" },
+            { geo: "sphere", r: 0.16, pos: [0, 1.0, 0.46], mat: "eye" },
+        ],
+    }),
+    M("petriblob", "Petri Blob", {
+        zones: ["lab"], tier: 2,
+        hp: 40, atk: 13, def: 7, spd: 8, xp: 37, coins: 16,
+        body: "#b6f0a8", accent: "#4a9a3a", quip: "*divides, worryingly*",
+        parts: [
+            { geo: "sphere", r: 0.85, scale: [1, 0.85, 1], pos: [-0.3, 0, 0], mat: "body" },
+            { geo: "sphere", r: 0.6, scale: [1, 0.85, 1], pos: [0.65, -0.15, 0], mat: "body" },
+            { geo: "sphere", r: 0.2, pos: [-0.3, 0.1, 0.6], mat: "accent" },
+            { geo: "sphere", r: 0.11, pos: [-0.5, 0.25, 0.68], mat: "eye" },
+            { geo: "sphere", r: 0.09, pos: [0.7, 0.05, 0.5], mat: "eye" },
+        ],
+    }),
+    M("icewisp", "Ice Wisp", {
+        zones: ["snow"], tier: 2,
+        hp: 34, atk: 15, def: 5, spd: 12, xp: 38, coins: 15,
+        body: "#cfeeff", accent: "#6bb6ff", quip: "*the air bites*",
+        parts: [
+            { geo: "octa", r: 0.7, pos: [0, 0.2, 0], mat: "body" },
+            { geo: "octa", r: 0.3, pos: [-0.75, -0.4, 0.1], mat: "accent" },
+            { geo: "octa", r: 0.24, pos: [0.7, -0.5, -0.1], mat: "accent" },
+            { geo: "sphere", r: 0.11, pos: [-0.2, 0.3, 0.55], mat: "eye" },
+            { geo: "sphere", r: 0.11, pos: [0.2, 0.3, 0.55], mat: "eye" },
+        ],
+    }),
+    M("rockhopper", "Rock Hopper", {
+        zones: ["mountain"], tier: 2,
+        hp: 50, atk: 11, def: 12, spd: 4, xp: 36, coins: 14,
+        body: "#9a9186", accent: "#6b6459", quip: "*grinds into motion*",
+        parts: [
+            { geo: "box", w: 1.2, h: 1.0, d: 1.0, pos: [0, 0, 0], mat: "body" },
+            { geo: "box", w: 0.6, h: 0.5, d: 0.6, pos: [0.3, 0.75, 0], rot: [0, 0.4, 0.2], mat: "body" },
+            { geo: "box", w: 0.35, h: 0.6, d: 0.35, pos: [-0.5, -0.75, 0], mat: "accent" },
+            { geo: "box", w: 0.35, h: 0.6, d: 0.35, pos: [0.5, -0.75, 0], mat: "accent" },
+            { geo: "sphere", r: 0.12, pos: [-0.24, 0.2, 0.52], mat: "eye" },
+            { geo: "sphere", r: 0.12, pos: [0.24, 0.2, 0.52], mat: "eye" },
+        ],
+    }),
+    M("meteorite", "Meteorite", {
+        zones: ["space"], tier: 2,
+        hp: 46, atk: 14, def: 9, spd: 7, xp: 39, coins: 17,
+        body: "#5a5460", accent: "#ff8a4a", quip: "*still glowing from re-entry*",
+        parts: [
+            { geo: "octa", r: 1.0, pos: [0, 0, 0], mat: "body" },
+            { geo: "sphere", r: 0.28, pos: [-0.5, 0.35, 0.5], mat: "glow" },
+            { geo: "sphere", r: 0.2, pos: [0.45, -0.3, 0.55], mat: "glow" },
+            { geo: "sphere", r: 0.13, pos: [-0.15, 0.15, 0.85], mat: "eye" },
+            { geo: "sphere", r: 0.13, pos: [0.3, 0.2, 0.8], mat: "eye" },
+        ],
+    }),
+    M("treant", "Old Treant", {
+        zones: ["forest"], tier: 3,
+        hp: 74, atk: 16, def: 14, spd: 3, xp: 62, coins: 27,
+        body: "#7a5f3f", accent: "#5c9a4a", quip: "*roots tear free of the soil*",
+        parts: [
+            { geo: "cylinder", r: 0.55, h: 2.0, pos: [0, 0.1, 0], mat: "body" },
+            { geo: "sphere", r: 0.85, scale: [1.3, 0.8, 1.1], pos: [0, 1.35, 0], mat: "accent" },
+            { geo: "cylinder", r: 0.13, h: 0.9, pos: [-0.75, 0.5, 0], rot: [0, 0, 0.9], mat: "body" },
+            { geo: "cylinder", r: 0.13, h: 0.9, pos: [0.75, 0.5, 0], rot: [0, 0, -0.9], mat: "body" },
+            { geo: "sphere", r: 0.13, pos: [-0.22, 0.5, 0.5], mat: "eye" },
+            { geo: "sphere", r: 0.13, pos: [0.22, 0.5, 0.5], mat: "eye" },
+        ],
+    }),
+    M("nightmare", "Nightmare", {
+        zones: ["night", "dusk"], tier: 3,
+        hp: 64, atk: 19, def: 10, spd: 11, xp: 64, coins: 26,
+        body: "#3b2f5c", accent: "#a88ff0", quip: "*you feel watched*",
+        parts: [
+            { geo: "sphere", r: 0.95, scale: [1, 1.2, 1], pos: [0, 0.1, 0], mat: "body" },
+            { geo: "cone", r: 0.2, h: 0.6, pos: [-0.45, 1.15, 0], rot: [0, 0, 0.3], mat: "body" },
+            { geo: "cone", r: 0.2, h: 0.6, pos: [0.45, 1.15, 0], rot: [0, 0, -0.3], mat: "body" },
+            { geo: "sphere", r: 0.16, pos: [-0.3, 0.35, 0.8], mat: "glow" },
+            { geo: "sphere", r: 0.16, pos: [0.3, 0.35, 0.8], mat: "glow" },
+        ],
+    }),
 ];
 
 /* ── bosses ──
@@ -245,6 +406,32 @@ export const BOSSES = [
             { geo: "octa", r: 0.28, pos: [1.5, 1.1, 0], mat: "glow" },
         ],
     }),
+    M("gridlock", "Gridlock", {
+        zones: ["city"], tier: 4, boss: true,
+        hp: 185, atk: 26, def: 19, spd: 6, xp: 285, coins: 130,
+        body: "#4a5260", accent: "#ffb347", quip: "Nobody is going anywhere.",
+        parts: [
+            { geo: "box", w: 1.8, h: 1.1, d: 1.0, pos: [0, 0, 0], mat: "body" },
+            { geo: "box", w: 1.1, h: 0.7, d: 0.9, pos: [0, 0.85, 0], mat: "body" },
+            { geo: "cylinder", r: 0.28, h: 0.18, pos: [-0.75, -0.7, 0.5], rot: [0, 0, 1.57], mat: "dark" },
+            { geo: "cylinder", r: 0.28, h: 0.18, pos: [0.75, -0.7, 0.5], rot: [0, 0, 1.57], mat: "dark" },
+            { geo: "sphere", r: 0.17, pos: [-0.5, 0.9, 0.48], mat: "glow" },
+            { geo: "sphere", r: 0.17, pos: [0.5, 0.9, 0.48], mat: "glow" },
+        ],
+    }),
+    M("blackfriday", "Black Friday", {
+        zones: ["mall"], tier: 4, boss: true,
+        hp: 170, atk: 28, def: 15, spd: 11, xp: 275, coins: 150,
+        body: "#2b2b33", accent: "#ff5f8f", quip: "DOORS OPEN AT MIDNIGHT.",
+        parts: [
+            { geo: "box", w: 1.6, h: 1.2, d: 1.1, pos: [0, 0.1, 0], mat: "body" },
+            { geo: "torus", r: 0.9, tube: 0.11, pos: [0, 0.9, 0], rot: [1.3, 0, 0], mat: "accent" },
+            { geo: "cone", r: 0.3, h: 0.7, pos: [-0.6, 1.2, 0], mat: "accent" },
+            { geo: "cone", r: 0.3, h: 0.7, pos: [0.6, 1.2, 0], mat: "accent" },
+            { geo: "sphere", r: 0.18, pos: [-0.4, 0.3, 0.6], mat: "glow" },
+            { geo: "sphere", r: 0.18, pos: [0.4, 0.3, 0.6], mat: "glow" },
+        ],
+    }),
 ];
 
 export const ALL = [...MONSTERS, ...BOSSES];
@@ -283,8 +470,8 @@ export function bossForZone(zone) {
 const TIER_PROFILE = {
     1: { hp: 1.10, atk: 0.60, def: 0.40, spd: 0.90, xp: 0.35, coins: 0.30 },
     2: { hp: 1.80, atk: 0.80, def: 0.60, spd: 1.00, xp: 0.60, coins: 0.55 },
-    3: { hp: 1.95, atk: 0.70, def: 0.75, spd: 1.05, xp: 1.00, coins: 0.95 },
-    4: { hp: 3.20, atk: 0.72, def: 0.85, spd: 1.00, xp: 3.20, coins: 3.00 },
+    3: { hp: 2.00, atk: 0.79, def: 0.75, spd: 1.05, xp: 1.00, coins: 0.95 },
+    4: { hp: 3.30, atk: 0.76, def: 0.85, spd: 1.00, xp: 3.20, coins: 3.00 },
 };
 
 // pet stat curve, mirrored from rpg.js stats()

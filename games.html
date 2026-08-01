@@ -85,11 +85,22 @@
     }
     .controls {
       display: flex;
-      gap: 8px;
+      gap: 14px;
       justify-content: center;
-      padding: 10px 0 4px;
+      align-items: center;
+      padding: 8px 0 4px;
       flex-wrap: wrap;
     }
+    #stick { --js-size: 132px; }
+    #extra-controls { display: flex; flex-direction: column; gap: 8px; }
+    .hint {
+      text-align: center;
+      font-size: 10px;
+      color: #7a8aa5;
+      padding-bottom: 6px;
+      letter-spacing: .02em;
+    }
+    @media (max-height: 720px) { #stick { --js-size: 108px; } }
     .controls button {
       padding: 6px 14px;
       border: none;
@@ -151,13 +162,26 @@
     <span class="high-score">🏆 <span id="highScoreDisplay">0</span></span>
   </div>
   <div class="controls" id="controls">
-    <!-- dynamic controls will be injected -->
+    <div id="stick"></div>
+    <div id="extra-controls"></div>
   </div>
+  <div class="hint" id="control-hint"></div>
   <button class="back-btn" onclick="window.close()">← Back to Pet</button>
 </div>
 
-<script>
+<script type="module">
   // ─── GAME ENGINE ───
+  /* This used to be a classic <script> after a separate module tag for the
+     joystick. Modules are deferred and execute after HTML parsing, while a
+     classic script runs immediately as the parser reaches it — so the
+     switchGame('tetris') call at the very bottom ran BEFORE the joystick
+     module had defined window.createJoystick, threw a silent TypeError, and
+     took the game loop's own startup with it. First load showed a static
+     board; only a manual tab click (by which time the module had finished)
+     ever actually started rendering. Importing directly makes the module
+     graph the thing that enforces order, instead of hoping two independent
+     script tags race the right way. */
+  import { createJoystick } from './js/joystick.js';
   const canvas = document.getElementById('gameCanvas');
   const ctx = canvas.getContext('2d');
   const scoreSpan = document.getElementById('scoreDisplay');
@@ -633,13 +657,11 @@
       updateScore(gameState.score);
       updateHighScore('tetris');
       drawTetris(gameState);
-      document.getElementById('controls').innerHTML = `
-        <button data-key="left">◀</button>
-        <button data-key="right">▶</button>
-        <button data-key="down">▼</button>
-        <button data-key="rotate">↻</button>
-        <button data-key="drop">⬇⬇</button>
-      `;
+      /* Up rotates and the centre hard-drops, so one round pad covers all five
+         Tetris inputs without a second row of buttons. */
+      buildStick({ up: 'rotate', down: 'down', left: 'left', right: 'right',
+                   center: 'drop',
+                   hint: '◀ ▶ move · ▲ rotate · ▼ soft drop · centre = hard drop' });
     } else if (game === 'galactica') {
       gameState = initGalactica();
       updateScore(gameState.score);
@@ -661,32 +683,18 @@
       document.removeEventListener('keyup', keyUp);
       document.addEventListener('keydown', keyDown);
       document.addEventListener('keyup', keyUp);
-      document.getElementById('controls').innerHTML = `
-        <button data-key="left">◀</button>
-        <button data-key="right">▶</button>
-        <button class="fire" data-key="fire">🔥 FIRE</button>
-      `;
+      buildStick({ left: 'left', right: 'right',
+                   extra: [{ key: 'fire', label: '🔥 FIRE', cls: 'fire', hold: true }],
+                   hint: '◀ ▶ steer · hold FIRE' });
       drawGalactica(g);
     } else if (game === 'snake') {
       gameState = initSnake();
       updateScore(gameState.score);
       updateHighScore('snake');
       drawSnake(gameState);
-      document.getElementById('controls').innerHTML = `
-        <button data-key="up">▲</button>
-        <button data-key="left">◀</button>
-        <button data-key="down">▼</button>
-        <button data-key="right">▶</button>
-      `;
+      buildStick({ up: 'up', down: 'down', left: 'left', right: 'right',
+                   hint: 'steer with the pad — you cannot turn back on yourself' });
     }
-    // bind control buttons
-    document.querySelectorAll('#controls [data-key]').forEach(btn => {
-      const key = btn.dataset.key;
-      btn.addEventListener('touchstart', (e) => { e.preventDefault(); handleKeyPress(key, true); });
-      btn.addEventListener('touchend', (e) => { e.preventDefault(); handleKeyPress(key, false); });
-      btn.addEventListener('mousedown', () => handleKeyPress(key, true));
-      btn.addEventListener('mouseup', () => handleKeyPress(key, false));
-    });
     // keyboard listeners for current game
     // we'll handle globally but delegate
     if (game !== 'galactica') {
@@ -700,6 +708,38 @@
     // restart loop
     lastTimestamp = performance.now();
     gameLoopId = requestAnimationFrame(gameLoop);
+  }
+
+  /* One round pad for every game. `map` says which game key each direction
+     sends; anything unmapped simply does nothing, so Galactica gets a
+     left/right stick without pretending up and down exist. */
+  let stick = null;
+
+  function buildStick(cfg) {
+    const host = document.getElementById('stick');
+    const extra = document.getElementById('extra-controls');
+    if (stick) { stick.destroy(); stick = null; }
+    extra.innerHTML = '';
+    document.getElementById('control-hint').textContent = cfg.hint || '';
+
+    stick = createJoystick(host, (dir, pressed) => {
+      const key = cfg[dir];
+      if (key) handleKeyPress(key, pressed);
+    }, {
+      center: () => { if (cfg.center) { handleKeyPress(cfg.center, true); handleKeyPress(cfg.center, false); } },
+    });
+
+    for (const b of (cfg.extra || [])) {
+      const el = document.createElement('button');
+      el.textContent = b.label;
+      if (b.cls) el.className = b.cls;
+      el.addEventListener('pointerdown', (e) => { e.preventDefault(); handleKeyPress(b.key, true); });
+      const off = (e) => { e.preventDefault(); handleKeyPress(b.key, false); };
+      el.addEventListener('pointerup', off);
+      el.addEventListener('pointerleave', off);
+      el.addEventListener('pointercancel', off);
+      extra.appendChild(el);
+    }
   }
 
   function handleKeyPress(key, pressed) {

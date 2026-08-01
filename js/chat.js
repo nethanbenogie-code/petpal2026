@@ -8,6 +8,7 @@ import { shooter } from './shooter.js';
 import { AFFECTION_WORDS, BAD_WORDS, GREETING_WORDS, QUESTIONS, STOPWORDS, getMood, getStage, pickReply, randomLearnedWord, save, setMoodOverride, state, uid } from './state.js';
 import { finishTraining, performTrick } from './tricks.js';
 import { chirp, log, speak } from './ui.js';
+import { tryEventCommand } from './calendar.js';
 /* ─── CHAT ─── */
 /* ─── CONTACTS OVER CHAT ──────────────────────────────────────────
    Saves and reads back a name / number / address through the chat box,
@@ -269,6 +270,16 @@ function handleUserMessage(rawText) {
         save();
         chirp("beep");
         setTimeout(() => speak(contactReply, 7000), 300);
+        return;
+    }
+
+    // Checked next, same reasoning: calendar text must never reach learn()
+    // either, or a reminder's date/time ends up as words the pet parrots back.
+    const eventReply = tryEventCommand(text);
+    if (eventReply) {
+        save();
+        chirp("beep");
+        setTimeout(() => speak(eventReply, 7000), 300);
         return;
     }
 

@@ -537,6 +537,217 @@
         #pet-wrap.sleeping #pet .leg {
             animation: none;
         }
+        /* ─── WEAPON SHOP CARDS ───
+           Wider than the other shop tiles because a weapon has to show what it
+           does, not just what it costs. */
+        .shop-list.wide {
+            grid-template-columns: repeat(2, 1fr);
+        }
+        .shop-item.weapon {
+            padding-bottom: 6px;
+        }
+        .shop-item.weapon .wstats {
+            font-size: 9px;
+            font-weight: 700;
+            color: #6b7a52;
+            margin-top: 1px;
+        }
+        .shop-item.weapon .wskill {
+            font-size: 9px;
+            color: #8a6a2f;
+            font-weight: 700;
+        }
+        .shop-item.weapon .wskill.dim {
+            color: #bbb;
+            font-weight: 400;
+        }
+        /* ─── IN-STAGE BATTLE ───
+           The arena canvas is transparent and sits over the scene, so the
+           location backdrop, decor and weather keep showing behind the fight.
+           #pet-wrap hides while battling — the pet is in the arena instead. */
+        #arena-canvas {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            display: none;
+            pointer-events: none;
+            z-index: 14;
+        }
+        .pet-stage.battling #arena-canvas {
+            display: block;
+        }
+        .pet-stage.battling #pet-wrap,
+        .pet-stage.battling .playmate,
+        .pet-stage.battling .bubble,
+        .pet-stage.battling .mood-tag,
+        .pet-stage.battling .stage-info,
+        .pet-stage.battling .time-tag {
+            display: none;
+        }
+        .battle-layer {
+            position: absolute;
+            inset: 0;
+            z-index: 16;
+            display: none;
+            pointer-events: none;
+        }
+        .battle-layer.show {
+            display: block;
+        }
+        .bhud {
+            position: absolute;
+            left: 8px;
+            right: 8px;
+            pointer-events: none;
+        }
+        .bhud.top { top: 6px; }
+        .bhud.bottom { bottom: 6px; }
+        .brow {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 10px;
+            font-weight: 800;
+            color: #fff;
+            text-shadow: 0 1px 3px rgba(0, 0, 0, .7);
+        }
+        .brow .bnm { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .brow .blv {
+            background: rgba(0, 0, 0, .45);
+            padding: 0 6px;
+            border-radius: 999px;
+            font-size: 9px;
+        }
+        .btrack {
+            height: 7px;
+            background: rgba(0, 0, 0, .5);
+            border-radius: 4px;
+            overflow: hidden;
+            margin-top: 2px;
+        }
+        .bfill {
+            height: 100%;
+            width: 100%;
+            border-radius: 4px;
+            transition: width .3s ease;
+        }
+        .bfill.pet { background: linear-gradient(90deg, #7bc47f, #b6e6a8); }
+        .bfill.mon { background: linear-gradient(90deg, #e56b6f, #ff9d7a); }
+        .bfill.low { background: linear-gradient(90deg, #e5405f, #ff7a7a); }
+        .bnum {
+            font-size: 9px;
+            font-weight: 700;
+            color: #fff;
+            text-align: right;
+            text-shadow: 0 1px 3px rgba(0, 0, 0, .8);
+        }
+        .bkind {
+            position: absolute;
+            top: 34px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 8px;
+            font-weight: 800;
+            letter-spacing: .12em;
+            background: rgba(0, 0, 0, .45);
+            color: #fff;
+            padding: 2px 9px;
+            border-radius: 999px;
+        }
+        .blog {
+            height: 34px;
+            overflow-y: auto;
+            font-size: 9px;
+            line-height: 1.45;
+            color: #fff;
+            background: rgba(0, 0, 0, .42);
+            border-radius: 7px;
+            padding: 3px 7px;
+            margin-top: 5px;
+            pointer-events: auto;
+        }
+        .blog .hit-mon { color: #b6e6a8; }
+        .blog .hit-pet { color: #ffb3a7; }
+        .blog .skill { color: var(--gold); font-weight: 700; }
+        .blog .heal { color: #9ce0ff; }
+        .blog .win { color: #b6e6a8; font-weight: 800; }
+        .blog .lose { color: #ff9d9d; font-weight: 800; }
+        .bactions {
+            display: flex;
+            gap: 4px;
+            margin-top: 5px;
+            pointer-events: auto;
+            overflow-x: auto;
+        }
+        .bactions button {
+            flex: 1 0 auto;
+            min-width: 52px;
+            background: rgba(0, 0, 0, .5);
+            border: 1px solid rgba(255, 255, 255, .2);
+            color: #fff;
+            border-radius: 9px;
+            padding: 5px 3px;
+            font-size: 8px;
+            font-weight: 700;
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 1px;
+            transition: .12s;
+        }
+        .bactions button .bi { font-size: 14px; }
+        .bactions button .bs { font-size: 7px; opacity: .8; }
+        .bactions button.primary {
+            background: rgba(247, 215, 116, .28);
+            border-color: rgba(247, 215, 116, .6);
+        }
+        .bactions button:active:not(:disabled) { transform: scale(.93); }
+        .bactions button:disabled { opacity: .35; cursor: default; }
+        .bfloat {
+            position: absolute;
+            top: 46%;
+            font-weight: 800;
+            font-size: 17px;
+            pointer-events: none;
+            text-shadow: 0 2px 6px rgba(0, 0, 0, .7);
+            animation: bfloatUp 1s ease-out forwards;
+        }
+        @keyframes bfloatUp {
+            0% { opacity: 1; transform: translateY(0) scale(.8); }
+            30% { transform: translateY(-12px) scale(1.15); }
+            100% { opacity: 0; transform: translateY(-46px) scale(1); }
+        }
+        .bresult {
+            position: absolute;
+            inset: 0;
+            background: rgba(8, 12, 20, .88);
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 5px;
+            text-align: center;
+            padding: 16px;
+            pointer-events: auto;
+            color: #fff;
+        }
+        .bresult.show { display: flex; }
+        .bresult h3 { font-size: 19px; }
+        .bresult .brew { font-size: 13px; color: var(--gold); font-weight: 800; }
+        .bresult .bsub { font-size: 10px; opacity: .8; }
+        .bresult button {
+            margin-top: 8px;
+            background: var(--gold);
+            color: #4a3600;
+            border: none;
+            padding: 8px 20px;
+            border-radius: 10px;
+            font-weight: 800;
+            font-size: 12px;
+            cursor: pointer;
+        }
         /* ─── TRAVEL BETWEEN LOCATIONS ─── */
         .travel-veil {
             position: absolute;
@@ -1686,6 +1897,30 @@
                     <div class="mood-tag" id="mood-tag">idle</div>
                     <div class="time-tag" id="time-tag"></div>
                     <div class="stage-info" id="stage-tag"></div>
+                </div>
+                <!-- Battles happen right here on the stage, so the location
+                     backdrop, weather and decor stay visible behind them. -->
+                <canvas id="arena-canvas"></canvas>
+                <div class="battle-layer" id="battle-layer">
+                    <div class="bhud top">
+                        <div class="brow"><span class="bnm" id="bmon-name">—</span><span class="blv" id="bmon-lv"></span></div>
+                        <div class="btrack"><div class="bfill mon" id="bmon-hp"></div></div>
+                        <div class="bnum" id="bmon-num"></div>
+                    </div>
+                    <div class="bkind" id="battle-kind">ENCOUNTER</div>
+                    <div class="bhud bottom">
+                        <div class="brow"><span class="bnm" id="bpet-name">Pet</span><span class="blv" id="bpet-lv"></span></div>
+                        <div class="btrack"><div class="bfill pet" id="bpet-hp"></div></div>
+                        <div class="bnum" id="bpet-num"></div>
+                        <div class="blog" id="blog"></div>
+                        <div class="bactions" id="bactions"></div>
+                    </div>
+                    <div class="bresult" id="bresult">
+                        <h3 id="bresult-title">Victory!</h3>
+                        <div class="brew" id="bresult-reward"></div>
+                        <div class="bsub" id="bresult-sub"></div>
+                        <button id="bresult-close">Done</button>
+                    </div>
                 </div>
                 <div class="travel-veil" id="travel-veil"></div>
                 <div class="flash" id="flash"></div>

@@ -14,6 +14,7 @@
 
 import { state, save, clamp } from './state.js';
 import { toast, speak, chirp } from './ui.js';
+import { weaponBonus, equippedWeapon, weaponBlurb } from './weapons.js';
 
 export const MAX_LEVEL = 100;
 
@@ -50,12 +51,14 @@ export function progress() {
 export function stats() {
     const L = level();
     const t = state.traits || {};
+    const w = weaponBonus(state);
     return {
         level: L,
         maxHp: Math.round(20 + L * 4 + (t.independent || 0) * 0.2),
-        atk: Math.round(5 + L * 1.5 + (t.playful || 0) * 0.1),
-        def: Math.round(3 + L * 1.2 + (t.affectionate || 0) * 0.1),
-        spd: Math.round(4 + L * 0.8 + (t.curious || 0) * 0.1),
+        atk: Math.max(1, Math.round((5 + L * 1.5 + (t.playful || 0) * 0.1) * (1 + w.atk))),
+        def: Math.max(0, Math.round((3 + L * 1.2 + (t.affectionate || 0) * 0.1) * (1 + w.def))),
+        spd: Math.max(1, Math.round((4 + L * 0.8 + (t.curious || 0) * 0.1) * (1 + w.spd))),
+        weapon: w,
     };
 }
 
@@ -130,6 +133,11 @@ export function renderLevel() {
 }
 
 /** The "📊 Level & stats" menu panel body. */
+function weaponLabel() {
+    const w = equippedWeapon(state);
+    return w ? `${w.name} (${weaponBlurb(w)})` : "none";
+}
+
 export function levelPanelHtml() {
     const p = progress();
     const s = stats();
@@ -152,6 +160,7 @@ export function levelPanelHtml() {
       ${row("⚔️ Attack", s.atk)}
       ${row("🛡 Defence", s.def)}
       ${row("💨 Speed", s.spd)}
+      ${row("🗡 Weapon", weaponLabel())}
       <p style="font-size:11px; color:#888; margin-top:8px;">
         Level is earned by playing; Egg→Adult is just age. Combat stats also rise
         with personality — Attack follows playful, Defence follows affectionate,
