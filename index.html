@@ -7,7 +7,7 @@
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <meta name="theme-color" content="#f7c5cc" />
-    <title>PetPal — AI Companion</title>
+    <title>PetPal — AI Companion + Journal + Shooter</title>
     <link rel="manifest" href="manifest.json" />
     <link rel="icon" type="image/svg+xml" href="icon.svg" />
     <link rel="apple-touch-icon" href="icon.svg" />
@@ -51,6 +51,7 @@
             user-select: none;
             -webkit-user-select: none;
         }
+        /* ─── DEVICE ─── */
         .device {
             width: 100%;
             max-width: 420px;
@@ -66,6 +67,7 @@
             position: relative;
             overflow: hidden;
         }
+        /* ─── TOPBAR ─── */
         .topbar {
             display: flex;
             justify-content: space-between;
@@ -126,6 +128,7 @@
             background: var(--btn-active);
             color: white;
         }
+        /* ─── SCREEN ─── */
         .screen {
             background: linear-gradient(180deg, #d5f0c2, var(--screen));
             border-radius: var(--radius);
@@ -147,6 +150,7 @@
             background: repeating-linear-gradient(0deg, rgba(0, 0, 0, 0.02) 0, rgba(0, 0, 0, 0.02) 1px, transparent 1px, transparent 3px);
             pointer-events: none;
         }
+        /* ─── STATS ─── */
         .stats {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
@@ -184,6 +188,7 @@
         .stat-fill.mid {
             background: #b58900;
         }
+        /* ─── PET STAGE ─── */
         .pet-stage {
             flex: 1;
             min-height: 0;
@@ -218,7 +223,7 @@
             position: absolute;
             cursor: grab;
             touch-action: none;
-            transition: filter 0.2s;
+            transition: filter 0.2s, transform 0.15s ease-out;
             z-index: 10;
             width: 55%;
             max-width: 180px;
@@ -264,7 +269,10 @@
         #pet-wrap.spin #pet {
             animation: spin 1s ease-in-out;
         }
-        #pet-wrap.jump #pet {
+        /* .jump = a trick the user triggered, .hop = the pet's own idea. Same
+           animation, but only .jump counts as "busy" — see petBusy(). */
+        #pet-wrap.jump #pet,
+        #pet-wrap.hop #pet {
             animation: jump 0.8s ease-in-out;
         }
         #pet-wrap.dance #pet {
@@ -356,6 +364,142 @@
                 transform: rotate(15deg) translateY(-6px);
             }
         }
+        /* ─── LIMBS: IDLE SWAY ───
+           Kept in CSS rather than recomputed in drawPet() so the SVG can be
+           left alone between state changes. Rebuilding innerHTML restarts
+           every animation inside it, which is why drawPet() is signature-
+           guarded — see the comment there. */
+        #pet .arm,
+        #pet .leg {
+            transform-box: fill-box;
+            transform-origin: center;
+        }
+        #pet .arm {
+            animation: armIdle 2.4s ease-in-out infinite;
+        }
+        #pet .arm-r {
+            animation-delay: -1.2s;
+        }
+        @keyframes armIdle {
+            0%,
+            100% {
+                transform: translateY(-4px);
+            }
+            50% {
+                transform: translateY(4px);
+            }
+        }
+        /* ─── WALK / RUN CYCLE ───
+           These must stay AFTER the mood rules above: equal specificity, so
+           source order decides which animation a walking-and-happy pet gets. */
+        #pet-wrap.walking #pet {
+            animation: walkBob 0.46s ease-in-out infinite;
+        }
+        #pet-wrap.running #pet {
+            animation: walkBob 0.26s ease-in-out infinite;
+        }
+        @keyframes walkBob {
+            0%,
+            100% {
+                transform: translateY(0) scale(1, 1);
+            }
+            50% {
+                transform: translateY(-6px) scale(0.98, 1.02);
+            }
+        }
+        #pet-wrap.walking #pet .leg {
+            animation: legWalk 0.46s linear infinite;
+        }
+        #pet-wrap.walking #pet .leg-r {
+            animation-delay: -0.23s;
+        }
+        #pet-wrap.running #pet .leg {
+            animation: legRun 0.26s linear infinite;
+        }
+        #pet-wrap.running #pet .leg-r {
+            animation-delay: -0.13s;
+        }
+        @keyframes legWalk {
+            0% {
+                transform: translate(-11px, 0);
+            }
+            25% {
+                transform: translate(-3px, -8px);
+            }
+            50% {
+                transform: translate(11px, -2px);
+            }
+            75% {
+                transform: translate(3px, 1px);
+            }
+            100% {
+                transform: translate(-11px, 0);
+            }
+        }
+        @keyframes legRun {
+            0% {
+                transform: translate(-15px, 2px) scale(1, 0.85);
+            }
+            25% {
+                transform: translate(-3px, -15px) scale(1, 1);
+            }
+            50% {
+                transform: translate(15px, -5px) scale(1, 0.85);
+            }
+            75% {
+                transform: translate(1px, -8px) scale(1, 1);
+            }
+            100% {
+                transform: translate(-15px, 2px) scale(1, 0.85);
+            }
+        }
+        #pet-wrap.walking #pet .arm {
+            animation: armWalk 0.46s ease-in-out infinite;
+        }
+        #pet-wrap.walking #pet .arm-r {
+            animation-delay: -0.23s;
+        }
+        #pet-wrap.running #pet .arm {
+            animation: armRun 0.26s ease-in-out infinite;
+        }
+        #pet-wrap.running #pet .arm-r {
+            animation-delay: -0.13s;
+        }
+        @keyframes armWalk {
+            0%,
+            100% {
+                transform: translate(3px, -7px) rotate(-16deg);
+            }
+            50% {
+                transform: translate(-3px, 8px) rotate(16deg);
+            }
+        }
+        @keyframes armRun {
+            0%,
+            100% {
+                transform: translate(6px, -13px) rotate(-34deg);
+            }
+            50% {
+                transform: translate(-6px, 10px) rotate(34deg);
+            }
+        }
+        #pet-wrap.sleeping #pet .arm,
+        #pet-wrap.sleeping #pet .leg {
+            animation: none;
+        }
+        /* ─── TRAVEL BETWEEN LOCATIONS ─── */
+        .travel-veil {
+            position: absolute;
+            inset: 0;
+            opacity: 0;
+            pointer-events: none;
+            z-index: 40;
+            transition: opacity 0.35s ease;
+            background: #ffffff;
+        }
+        .travel-veil.on {
+            opacity: 1;
+        }
         .playmate {
             position: absolute;
             pointer-events: none;
@@ -382,13 +526,15 @@
             padding: 1px 6px;
             border-radius: 4px;
         }
+        /* Centering lives in the keyframes: an animated transform outranks the
+           inline one, so setting translate(-50%,-50%) in JS never took effect. */
         @keyframes floatMate {
             0%,
             100% {
-                transform: translateY(0);
+                transform: translate(-50%, -50%);
             }
             50% {
-                transform: translateY(-6px);
+                transform: translate(-50%, calc(-50% - 6px));
             }
         }
         .bubble {
@@ -509,6 +655,7 @@
                 transform: translateY(-80px) scale(1.2);
             }
         }
+        /* ─── ACTIONS ─── */
         .actions {
             display: grid;
             grid-template-columns: repeat(5, 1fr);
@@ -541,6 +688,7 @@
             font-size: 18px;
             line-height: 1;
         }
+        /* ─── CHAT BAR ─── */
         .chat-bar {
             display: flex;
             gap: 5px;
@@ -624,6 +772,7 @@
             font-style: italic;
             color: #888;
         }
+        /* scene backgrounds */
         .park-bg {
             background: linear-gradient(180deg, #a0d8ef 0%, #a0d8ef 55%, #7bc47f 55%, #7bc47f 100%);
         }
@@ -677,6 +826,18 @@
         }
         .rain-bg {
             background: linear-gradient(180deg, #6a7a8a 0%, #4a5a6a 100%);
+        }
+        .school-bg {
+            background: linear-gradient(180deg, #cfe4f7 0%, #cfe4f7 52%, #d9c9a3 52%, #c4b085 100%);
+        }
+        .mall-bg {
+            background: linear-gradient(180deg, #f6ecfa 0%, #e7d9ef 55%, #d5cbe0 100%);
+        }
+        .lab-bg {
+            background: linear-gradient(180deg, #e4f3f6 0%, #cbe4ea 58%, #b2d3da 100%);
+        }
+        .hospital-bg {
+            background: linear-gradient(180deg, #f2f9fb 0%, #e4f1f5 58%, #d2e7ec 100%);
         }
         .rain-bg .stat,
         .rain-bg .mood-tag,
@@ -800,6 +961,7 @@
             background: #4a8ec4;
             color: white;
         }
+        /* ─── MODAL ─── */
         .modal-bg {
             position: absolute;
             inset: 0;
@@ -933,6 +1095,7 @@
             background: var(--ok);
             color: white;
         }
+        /* ─── SHOP ─── */
         .shop-tabs {
             display: flex;
             gap: 4px;
@@ -1003,6 +1166,7 @@
         .shop-item.owned .item-price::before {
             content: "✓ ";
         }
+        /* ─── MENU ─── */
         .menu-list {
             display: flex;
             flex-direction: column;
@@ -1056,6 +1220,7 @@
         .menu-toggle.on::after {
             transform: translateX(14px);
         }
+        /* ─── GAMES ─── */
         .game-area {
             background: rgba(0, 0, 0, 0.06);
             border-radius: 10px;
@@ -1186,6 +1351,7 @@
             height: 100%;
             object-fit: cover;
         }
+        /* ─── NOTES / JOURNAL ─── */
         .note-item,
         .contact-item,
         .appt-item,
@@ -1234,6 +1400,7 @@
         .journal-item .del:active {
             background: rgba(229, 107, 111, 0.2);
         }
+        /* ─── SHOOTER GAME ─── */
         .shooter-container {
             background: #0a0a1a;
             border-radius: 12px;
@@ -1330,6 +1497,7 @@
             background: var(--danger);
             color: white;
         }
+        /* ─── RESPONSIVE ─── */
         @media (max-height: 700px) {
             .device {
                 gap: 4px;
@@ -1432,6 +1600,7 @@
 </head>
 <body>
     <div class="device">
+        <!-- TOPBAR -->
         <div class="topbar">
             <div class="name-box">
                 <span id="pet-name">Blob</span>
@@ -1446,6 +1615,7 @@
             </div>
         </div>
 
+        <!-- SCREEN -->
         <div class="screen" id="screen">
             <div class="stats" id="stats"></div>
             <div class="pet-stage" id="pet-stage">
@@ -1461,11 +1631,13 @@
                     <div class="time-tag" id="time-tag"></div>
                     <div class="stage-info" id="stage-tag"></div>
                 </div>
+                <div class="travel-veil" id="travel-veil"></div>
                 <div class="flash" id="flash"></div>
                 <div class="toast" id="toast"></div>
             </div>
             <div class="log" id="log"></div>
 
+            <!-- ACTIONS -->
             <div class="actions">
                 <button class="action" data-act="feed"><span class="action-icon">🍎</span><span>Feed</span></button>
                 <button class="action" data-act="water"><span class="action-icon">💧</span><span>Water</span></button>
@@ -1479,6 +1651,7 @@
                 <button class="action" data-act="shooter"><span class="action-icon">🚀</span><span>Shooter</span></button>
             </div>
 
+            <!-- CHAT -->
             <div class="chat-bar">
                 <input class="chat-input" id="chat-input" placeholder="Talk to your pet..." maxlength="120" autocomplete="off" />
                 <button class="chat-btn mic" id="mic-btn" title="Voice">🎤</button>
@@ -1486,6 +1659,7 @@
             </div>
         </div>
 
+        <!-- MODAL -->
         <div class="modal-bg" id="modal-bg">
             <div class="modal" id="modal-panel">
                 <div class="modal-header">
@@ -1498,12 +1672,15 @@
     </div>
 
     <script>
-        // ─── STATE ───
+        /* ═══════════════════════════════════════════════════════════════
+           PETPAL v4 — Full-featured AI companion + Journal + Shooter
+           ═══════════════════════════════════════════════════════════════ */
+
         const STORAGE_KEY = "petpal.v4";
         const STAT_KEYS = ["hunger", "thirst", "clean", "energy", "fun", "health"];
-        const STAT_LABELS = { hunger: "Full", thirst: "Hydra", clean: "Clean", energy: "Rest", fun: "Fun",
-        health: "Health" };
+        const STAT_LABELS = { hunger: "Full", thirst: "Hydra", clean: "Clean", energy: "Rest", fun: "Fun", health: "Health" };
         const DRAIN = { hunger: 0.08, thirst: 0.12, clean: 0.05, energy: 0.05, fun: 0.06, health: 0.01 };
+
         const STAGES = [
             { name: "Egg", until: 0.02, size: 0.55 },
             { name: "Baby", until: 0.3, size: 0.75, pitch: 1.8 },
@@ -1511,21 +1688,33 @@
             { name: "Teen", until: 3, size: 1.0, pitch: 1.2 },
             { name: "Adult", until: 999, size: 1.1, pitch: 1.0 }
         ];
+
+        const STOPWORDS = new Set(("a an the is are was were be been being do does did have has had " +
+            "i you he she it we they me him her us them my your his hers our their this that these those " +
+            "of in on at to for with by from and or but not so if then than as at").split(" "));
+
+        /* `tint` is the colour the travel veil fades through on the way in —
+           a white flash into Space or Night reads as a camera fault. */
         const LOCATIONS = [
-            { id: "home", label: "🏠 Home", bgClass: "" },
-            { id: "park", label: "🌳 Park", bgClass: "park-bg" },
-            { id: "beach", label: "🏖 Beach", bgClass: "beach-bg" },
-            { id: "forest", label: "🌲 Forest", bgClass: "forest-bg" },
-            { id: "city", label: "🏙 City", bgClass: "city-bg" },
-            { id: "mountain", label: "⛰ Mountain", bgClass: "mountain-bg" },
-            { id: "space", label: "🚀 Space", bgClass: "space-bg" },
-            { id: "snow", label: "❄️ Snow", bgClass: "snow-bg" },
-            { id: "rain", label: "🌧 Rain", bgClass: "rain-bg" },
-            { id: "bath", label: "🛁 Bath", bgClass: "bath-bg" },
-            { id: "dusk", label: "🌅 Dusk", bgClass: "dusk-bg" },
-            { id: "dawn", label: "🌄 Dawn", bgClass: "dawn-bg" },
-            { id: "night", label: "🌙 Night", bgClass: "night-bg" },
+            { id: "home", label: "🏠 Home", bgClass: "", tint: "#f2ede4" },
+            { id: "park", label: "🌳 Park", bgClass: "park-bg", tint: "#9ad39e" },
+            { id: "beach", label: "🏖 Beach", bgClass: "beach-bg", tint: "#ffeccb" },
+            { id: "school", label: "🏫 School", bgClass: "school-bg", tint: "#d9d0b4" },
+            { id: "mall", label: "🛍 Mall", bgClass: "mall-bg", tint: "#eadff2" },
+            { id: "lab", label: "🔬 Lab", bgClass: "lab-bg", tint: "#d3e9ee" },
+            { id: "hospital", label: "🏥 Hospital", bgClass: "hospital-bg", tint: "#e9f5f8" },
+            { id: "forest", label: "🌲 Forest", bgClass: "forest-bg", tint: "#79ae6f" },
+            { id: "city", label: "🏙 City", bgClass: "city-bg", tint: "#93a2b0" },
+            { id: "mountain", label: "⛰ Mountain", bgClass: "mountain-bg", tint: "#cfd9e2" },
+            { id: "space", label: "🚀 Space", bgClass: "space-bg", tint: "#12123a" },
+            { id: "snow", label: "❄️ Snow", bgClass: "snow-bg", tint: "#e8f0f8" },
+            { id: "rain", label: "🌧 Rain", bgClass: "rain-bg", tint: "#59697a" },
+            { id: "bath", label: "🛁 Bath", bgClass: "bath-bg", tint: "#bde3f0" },
+            { id: "dusk", label: "🌅 Dusk", bgClass: "dusk-bg", tint: "#a86a72" },
+            { id: "dawn", label: "🌄 Dawn", bgClass: "dawn-bg", tint: "#ffcaa8" },
+            { id: "night", label: "🌙 Night", bgClass: "night-bg", tint: "#1e2c4e" },
         ];
+
         const PLAYMATES = [
             { id: "cat", name: "Kitty", icon: "🐱", price: 80, color: "#f4a8b3" },
             { id: "dog", name: "Puppy", icon: "🐶", price: 100, color: "#c9b88a" },
@@ -1536,6 +1725,7 @@
             { id: "unicorn", name: "Unicorn", icon: "🦄", price: 200, color: "#f0a8d8" },
             { id: "dragon", name: "Dragon", icon: "🐉", price: 250, color: "#7ac4a8" },
         ];
+
         const SHOP_FOODS = [
             { id: "apple", name: "Apple", icon: "🍎", price: 5, effects: { hunger: 30 } },
             { id: "cake", name: "Cake", icon: "🍰", price: 15, effects: { hunger: 50, fun: 10, health: 5 } },
@@ -1546,6 +1736,7 @@
             { id: "fish", name: "Fish", icon: "🐟", price: 25, effects: { hunger: 40, health: 10 } },
             { id: "berry", name: "Berry", icon: "🫐", price: 8, effects: { hunger: 15, health: 5 } },
         ];
+
         const SHOP_ACCESSORIES = [
             { id: "tophat", name: "Top hat", icon: "🎩", price: 50, slot: "hat" },
             { id: "crown", name: "Crown", icon: "👑", price: 100, slot: "hat" },
@@ -1558,6 +1749,7 @@
             { id: "flower", name: "Flower", icon: "🌺", price: 25, slot: "hat" },
             { id: "star", name: "Star", icon: "⭐", price: 60, slot: "hat" },
         ];
+
         const ACHIEVEMENTS = {
             first_pet: { label: "First pet", icon: "🐣", desc: "Hatch your first pet" },
             level_2: { label: "Growing up", icon: "🌱", desc: "Reach Baby stage" },
@@ -1582,6 +1774,7 @@
             shooter_score_100: { label: "Pilot", icon: "✈️", desc: "Score 100 in Shooter" },
             shooter_score_300: { label: "Ace", icon: "🏆", desc: "Score 300 in Shooter" },
         };
+
         const TRICK_ACTIONS = {
             spin: { name: "spin", class: "spin", emoji: "🌀" },
             jump: { name: "jump", class: "jump", emoji: "⬆" },
@@ -1593,11 +1786,13 @@
             wave: { name: "wave", class: "", emoji: "👋", handler: () => speak("👋 Hi!") },
             roll: { name: "roll", class: "spin", emoji: "🔄", handler: () => speak("*rolls over*") },
         };
+
         const AFFECTION_WORDS = ["love", "cute", "good", "sweet", "dear", "baby", "honey", "precious", "angel", "adorable"];
         const GREETING_WORDS = ["hi", "hello", "hey", "yo", "hola", "morning", "evening", "howdy"];
         const QUESTIONS = ["how", "what", "why", "where", "when", "who", "are", "do"];
         const BAD_WORDS = ["bad", "stupid", "dumb", "hate", "ugly", "gross"];
         const HUNT_ITEMS = ["🐭", "🐿", "🦋", "🐞", "🐜", "🐛", "🪲", "🐝", "🦗", "🐌", "🕷", "🦟"];
+
         const WEATHERS = [
             { id: "clear", label: "☀️ Clear", chance: 0.4 },
             { id: "cloudy", label: "☁️ Cloudy", chance: 0.25 },
@@ -1606,10 +1801,8 @@
             { id: "stormy", label: "⛈ Stormy", chance: 0.05 },
             { id: "foggy", label: "🌫 Foggy", chance: 0.05 },
         ];
-        const STOPWORDS = new Set(("a an the is are was were be been being do does did have has had " +
-            "i you he she it we they me him her us them my your his hers our their this that these those " +
-            "of in on at to for with by from and or but not so if then than as at").split(" "));
 
+        /* ─── STATE ─── */
         const DEFAULT_STATE = () => ({
             name: "Blob",
             born: Date.now(),
@@ -1651,7 +1844,8 @@
             huntStats: { caught: 0, total: 0 },
             petX: 50,
             petY: 50,
-            locationUnlocked: ["home", "park", "bath"],
+            lastDailyClaim: 0,
+            locationUnlocked: ["home", "park", "bath", "hospital"],
             totalCoinsEarned: 0,
             tricksLearned: 0,
             notes: [],
@@ -1680,13 +1874,7 @@
             try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } catch (e) {}
         }
 
-        // ─── HELPERS ───
-        function clamp(v, min, max) { return Math.max(min, Math.min(max, v)); }
-
-        function rand(min, max) { return Math.random() * (max - min) + min; }
-
-        function randInt(min, max) { return Math.floor(rand(min, max + 1)); }
-
+        /* ─── HELPERS ─── */
         function ageInHours() { return (Date.now() - state.born) / (1000 * 60 * 60); }
 
         function getStage() {
@@ -1694,6 +1882,27 @@
             for (const s of STAGES)
                 if (h < s.until) return s;
             return STAGES[STAGES.length - 1];
+        }
+
+        function pickReply(a) { return a[Math.floor(Math.random() * a.length)]; }
+
+        function randomLearnedWord() {
+            const w = Object.keys(state.vocab).filter(x => state.vocab[x].count >= 2);
+            return w.length ? w[Math.floor(Math.random() * w.length)] : "";
+        }
+
+        function clamp(v, min, max) { return Math.max(min, Math.min(max, v)); }
+
+        function rand(min, max) { return Math.random() * (max - min) + min; }
+
+        function randInt(min, max) { return Math.floor(rand(min, max + 1)); }
+
+        function getTimeOfDay() {
+            const h = new Date().getHours();
+            if (h >= 5 && h < 8) return "dawn";
+            if (h >= 8 && h < 17) return "day";
+            if (h >= 17 && h < 20) return "dusk";
+            return "night";
         }
 
         function getMood() {
@@ -1714,24 +1923,47 @@
         function setMoodOverride(m, ms) { state.moodOverride = m;
             state.moodUntil = Date.now() + ms; }
 
-        function pickReply(a) { return a[Math.floor(Math.random() * a.length)]; }
-
-        function randomLearnedWord() {
-            const w = Object.keys(state.vocab).filter(x => state.vocab[x].count >= 2);
-            return w.length ? w[Math.floor(Math.random() * w.length)] : "";
-        }
-
-        function getTimeOfDay() {
-            const h = new Date().getHours();
-            if (h >= 5 && h < 8) return "dawn";
-            if (h >= 8 && h < 17) return "day";
-            if (h >= 17 && h < 20) return "dusk";
-            return "night";
-        }
-
         function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 6); }
 
-        // ─── AUDIO ───
+        /* ─── TOAST / LOG / BUBBLE ─── */
+        let toastTimer;
+
+        function toast(text, type) {
+            const el = document.getElementById("toast");
+            el.textContent = text;
+            el.className = "toast show" + (type ? " " + type : "");
+            clearTimeout(toastTimer);
+            toastTimer = setTimeout(() => el.classList.remove("show"), 2200);
+        }
+
+        function log(who, text) {
+            const el = document.getElementById("log");
+            const div = document.createElement("div");
+            div.className = "log-entry " + who;
+            const prefix = who === "me" ? "You: " : who === "pet" ? `${state.name}: ` : "";
+            div.textContent = prefix + text;
+            el.appendChild(div);
+            while (el.children.length > 20) el.removeChild(el.firstChild);
+            el.scrollTop = el.scrollHeight;
+        }
+
+        let bubbleTimer;
+
+        function speak(text, duration = 3000) {
+            const b = document.getElementById("bubble");
+            b.textContent = text;
+            b.classList.add("show");
+            clearTimeout(bubbleTimer);
+            bubbleTimer = setTimeout(() => b.classList.remove("show"), duration);
+            log("pet", text);
+            speakOut(text);
+        }
+
+        function sayShort(t) { speak(t, 1500); }
+
+        function isBubbleShowing() { return document.getElementById("bubble").classList.contains("show"); }
+
+        /* ─── AUDIO ─── */
         let audioCtx = null;
 
         function initAudio() {
@@ -1799,7 +2031,7 @@
             speechSynthesis.speak(utt);
         }
 
-        // ─── SPEECH RECOGNITION ───
+        /* ─── SPEECH RECOGNITION ─── */
         let recognition = null;
         let isListening = false;
 
@@ -1849,45 +2081,7 @@
             document.getElementById("chat-input").placeholder = "Talk to your pet...";
         }
 
-        // ─── TOAST / LOG / BUBBLE ───
-        let toastTimer;
-
-        function toast(text, type) {
-            const el = document.getElementById("toast");
-            el.textContent = text;
-            el.className = "toast show" + (type ? " " + type : "");
-            clearTimeout(toastTimer);
-            toastTimer = setTimeout(() => el.classList.remove("show"), 2200);
-        }
-
-        function log(who, text) {
-            const el = document.getElementById("log");
-            const div = document.createElement("div");
-            div.className = "log-entry " + who;
-            const prefix = who === "me" ? "You: " : who === "pet" ? `${state.name}: ` : "";
-            div.textContent = prefix + text;
-            el.appendChild(div);
-            while (el.children.length > 20) el.removeChild(el.firstChild);
-            el.scrollTop = el.scrollHeight;
-        }
-
-        let bubbleTimer;
-
-        function speak(text, duration = 3000) {
-            const b = document.getElementById("bubble");
-            b.textContent = text;
-            b.classList.add("show");
-            clearTimeout(bubbleTimer);
-            bubbleTimer = setTimeout(() => b.classList.remove("show"), duration);
-            log("pet", text);
-            speakOut(text);
-        }
-
-        function sayShort(t) { speak(t, 1500); }
-
-        function isBubbleShowing() { return document.getElementById("bubble").classList.contains("show"); }
-
-        // ─── COINS ───
+        /* ─── COINS ─── */
         function earnCoins(n, silent) {
             state.coins += n;
             state.totalCoinsEarned += n;
@@ -1908,7 +2102,7 @@
             return true;
         }
 
-        // ─── ACHIEVEMENTS ───
+        /* ─── ACHIEVEMENTS ─── */
         function checkAchievements() {
             const a = state.achievements;
             const totalCoins = state.totalCoinsEarned || 0;
@@ -1962,7 +2156,7 @@
             save();
         }
 
-        // ─── DAILY LOGIN ───
+        /* ─── DAILY LOGIN ─── */
         function checkDailyLogin() {
             const today = new Date().toDateString();
             const last = state.dailyLogin.last ? new Date(state.dailyLogin.last).toDateString() : "";
@@ -1985,7 +2179,7 @@
             updateUI();
         }
 
-        // ─── WEATHER ───
+        /* ─── WEATHER ─── */
         function updateWeather() {
             const now = Date.now();
             if (now - state.weather.changedAt > 1000 * 60 * 30) {
@@ -2003,10 +2197,16 @@
             applyWeather();
         }
 
-        function applyWeather() {
+        /* Same reason as _sceneSig: this ran once a second and re-created every
+           raindrop, so rain restarted its fall animation instead of falling. */
+        let _weatherSig = "";
+
+        function applyWeather(force) {
             const scene = document.getElementById("scene");
-            scene.querySelectorAll(".rain-drop, .snowflake, .fog-overlay").forEach(el => el.remove());
             const w = state.weather.id;
+            const sig = w + "|" + scene.querySelectorAll(".rain-drop, .snowflake, .fog-overlay").length;
+            if (!force && sig === _weatherSig) return;
+            scene.querySelectorAll(".rain-drop, .snowflake, .fog-overlay").forEach(el => el.remove());
             if (w === "rainy" || w === "stormy") {
                 for (let i = 0; i < 25; i++) {
                     const drop = document.createElement("div");
@@ -2038,9 +2238,13 @@
                     `position:absolute; inset:0; background:rgba(200,200,210,0.25); backdrop-filter:blur(2px); pointer-events:none; z-index:2;`;
                 scene.appendChild(fog);
             }
+            /* Recorded AFTER the rebuild, so the count in the signature matches
+               what is on screen. If a decor sweep removes the fog overlay the
+               count drifts and the next call rebuilds — self-healing. */
+            _weatherSig = w + "|" + scene.querySelectorAll(".rain-drop, .snowflake, .fog-overlay").length;
         }
 
-        // ─── PET RENDERING ───
+        /* ─── PET RENDERING ─── */
         function pickColor() {
             const options = [
                 { body: "#c9e8b5", cheek: "#f4a8b3", outline: "#2d4a1f" },
@@ -2084,15 +2288,23 @@
             return map[id] || "";
         }
 
-        function drawPet() {
+        /* Rebuilding svg.innerHTML restarts every CSS animation inside it, and
+           drawPet() runs twice a second (setInterval + every tick). Without
+           this guard the walk cycle would reset 2x/sec. The signature covers
+           everything the markup actually depends on; if you add a new visual
+           input, add it here too or the pet will stop updating for it. */
+        let _petSig = "";
+
+        function drawPet(force) {
             const svg = document.getElementById("pet");
-            // Make sure we have a color
-            if (!state.color) {
-                state.color = pickColor();
-                save();
-            }
-            const c = state.color;
+            const c = state.color || (state.color = pickColor(), save(), state.color);
             const stage = getStage();
+            const mood = getMood();
+            const sig = [stage.name, mood, state.sleeping ? 1 : 0, c.body,
+                state.equipped.hat, state.equipped.eyes, state.equipped.neck
+            ].join("|");
+            if (!force && sig === _petSig) return;
+            _petSig = sig;
 
             if (stage.name === "Egg") {
                 svg.innerHTML = `
@@ -2103,7 +2315,6 @@
                 return;
             }
 
-            const mood = getMood();
             const asleep = state.sleeping;
             const scale = stage.size;
             const bodyR = 55;
@@ -2167,7 +2378,6 @@
             const cheeks = mood === "sick" ? "" :
                 `<ellipse cx="72" cy="110" rx="6" ry="4" fill="${c.cheek}" opacity="0.7"/>
                <ellipse cx="128" cy="110" rx="6" ry="4" fill="${c.cheek}" opacity="0.7"/>`;
-            const armSway = Math.sin(Date.now() / 500) * 5;
             const hatSVG = accessorySVG("hat");
             const neckSVG = accessorySVG("neck");
             const eyesOverlay = eyesAccessoryOverlay();
@@ -2175,15 +2385,18 @@
                 `<line x1="0" y1="${-bodyR}" x2="0" y2="${-bodyR - 15}" stroke="${c.outline}" stroke-width="3"/>
                <circle cx="0" cy="${-bodyR - 18}" r="4" fill="${c.cheek}" stroke="${c.outline}" stroke-width="2"/>` : "";
 
+            /* Limbs are drawn BEFORE the body so a lifted foot tucks behind it
+               instead of sliding across the belly. Their motion is CSS
+               (.leg / .arm), driven by the walking/running class on #pet-wrap. */
             svg.innerHTML = `
             <g transform="translate(100, 100)">
               <g transform="scale(${scale})">
+                <ellipse class="leg leg-l" cx="-20" cy="64" rx="12" ry="7" fill="${c.outline}"/>
+                <ellipse class="leg leg-r" cx="20" cy="64" rx="12" ry="7" fill="${c.outline}"/>
+                <ellipse class="arm arm-l" cx="${-bodyR - 5}" cy="20" rx="10" ry="6" fill="${c.body}" stroke="${c.outline}" stroke-width="3"/>
+                <ellipse class="arm arm-r" cx="${bodyR + 5}" cy="20" rx="10" ry="6" fill="${c.body}" stroke="${c.outline}" stroke-width="3"/>
                 <ellipse cx="0" cy="10" rx="${bodyR}" ry="${bodyR * 0.95}" fill="${c.body}" stroke="${c.outline}" stroke-width="4"/>
                 <ellipse cx="-20" cy="-15" rx="12" ry="8" fill="rgba(255,255,255,0.4)"/>
-                <ellipse cx="-20" cy="60" rx="12" ry="6" fill="${c.outline}"/>
-                <ellipse cx="20" cy="60" rx="12" ry="6" fill="${c.outline}"/>
-                <ellipse cx="${-bodyR - 5}" cy="${20 + armSway}" rx="10" ry="6" fill="${c.body}" stroke="${c.outline}" stroke-width="3"/>
-                <ellipse cx="${bodyR + 5}" cy="${20 - armSway}" rx="10" ry="6" fill="${c.body}" stroke="${c.outline}" stroke-width="3"/>
                 ${antenna}
                 ${neckSVG}
                 ${hatSVG}
@@ -2200,13 +2413,14 @@
           `;
         }
 
-        // ─── SCENE ───
-        function updateScene() {
-            const screen = document.getElementById("screen");
-            const scene = document.getElementById("scene");
-            LOCATIONS.forEach(l => screen.classList.remove(l.bgClass));
-            screen.classList.remove("night-bg", "dawn-bg", "dusk-bg");
+        /* ─── SCENE ─── */
+        /* updateScene() runs every tick. Rebuilding the decor each time
+           restarted the star/bubble animations once a second and would fight
+           the travel crossfade, so the backdrop is only touched when the
+           resolved location actually changes. */
+        let _sceneSig = "";
 
+        function resolvedScene() {
             let loc = state.scene;
             if (state.sleeping) loc = "night";
             if (loc === "home" && state.autoDayNight) {
@@ -2215,6 +2429,31 @@
                 else if (tod === "dawn") loc = "dawn";
                 else if (tod === "dusk") loc = "dusk";
             }
+            return loc;
+        }
+
+        function updateScene() {
+            const screen = document.getElementById("screen");
+            const scene = document.getElementById("scene");
+            const loc = resolvedScene();
+
+            if (loc === _sceneSig) {
+                document.getElementById("zzz").style.display = state.sleeping ? "block" : "none";
+                document.getElementById("time-tag").textContent = state.autoDayNight ? getTimeOfDay() : "";
+                renderPlaymates();
+                applyWeather();
+                return;
+            }
+
+            /* Home's bgClass is "", and classList.remove("") throws
+               SyntaxError. This line threw on EVERY call, and because
+               checkDailyLogin() -> updateUI() -> updateScene() sits at the top
+               of init, the throw aborted the rest of the startup script: no
+               tick interval, no autosave, no drag, no backdrops, no weather.
+               The filter is what makes any of the rest of this file run. */
+            LOCATIONS.forEach(l => { if (l.bgClass) screen.classList.remove(l.bgClass); });
+            screen.classList.remove("night-bg", "dawn-bg", "dusk-bg");
+
             const locData = LOCATIONS.find(l => l.id === loc);
             if (locData && locData.bgClass) {
                 screen.classList.add(locData.bgClass);
@@ -2239,6 +2478,46 @@
                      <div style="position:absolute; bottom:20px; right:15%; font-size:24px;">☀</div>
                      <div style="position:absolute; top:20%; right:8%; font-size:30px;">🌊</div>
                      <div style="position:absolute; bottom:10px; left:50%; font-size:14px;">🐚</div>`;
+                scene.appendChild(d);
+            } else if (loc === "school") {
+                const d = document.createElement("div");
+                d.className = "decor";
+                d.innerHTML =
+                    `<div style="position:absolute; bottom:14px; left:5%; font-size:40px;">🏫</div>
+                     <div style="position:absolute; bottom:16px; right:8%; font-size:26px;">🚌</div>
+                     <div style="position:absolute; bottom:18px; left:42%; font-size:18px;">🎒</div>
+                     <div style="position:absolute; top:14%; right:22%; font-size:16px;">🚩</div>
+                     <div style="position:absolute; bottom:20px; right:34%; font-size:14px;">📚</div>`;
+                scene.appendChild(d);
+            } else if (loc === "mall") {
+                const d = document.createElement("div");
+                d.className = "decor";
+                d.innerHTML =
+                    `<div style="position:absolute; bottom:12px; left:6%; font-size:36px;">🏬</div>
+                     <div style="position:absolute; bottom:16px; right:7%; font-size:28px;">🛒</div>
+                     <div style="position:absolute; bottom:18px; left:38%; font-size:20px;">🛍</div>
+                     <div style="position:absolute; top:12%; left:20%; font-size:14px;">✨</div>
+                     <div style="position:absolute; top:18%; right:16%; font-size:16px;">🎈</div>`;
+                scene.appendChild(d);
+            } else if (loc === "lab") {
+                const d = document.createElement("div");
+                d.className = "decor";
+                d.innerHTML =
+                    `<div style="position:absolute; bottom:14px; left:8%; font-size:32px;">🔬</div>
+                     <div style="position:absolute; bottom:16px; right:10%; font-size:28px;">⚗️</div>
+                     <div style="position:absolute; bottom:18px; left:40%; font-size:20px;">🧪</div>
+                     <div style="position:absolute; bottom:22px; right:34%; font-size:16px;">🧫</div>
+                     <div style="position:absolute; top:14%; left:26%; font-size:14px;">🧬</div>`;
+                scene.appendChild(d);
+            } else if (loc === "hospital") {
+                const d = document.createElement("div");
+                d.className = "decor";
+                d.innerHTML =
+                    `<div style="position:absolute; bottom:14px; left:6%; font-size:34px;">🏥</div>
+                     <div style="position:absolute; bottom:16px; right:9%; font-size:26px;">🛏</div>
+                     <div style="position:absolute; bottom:20px; left:40%; font-size:18px;">🩺</div>
+                     <div style="position:absolute; bottom:22px; right:33%; font-size:16px;">💊</div>
+                     <div style="position:absolute; top:12%; right:20%; font-size:16px;">🚑</div>`;
                 scene.appendChild(d);
             } else if (loc === "forest") {
                 const d = document.createElement("div");
@@ -2316,86 +2595,360 @@
             document.getElementById("time-tag").textContent = state.autoDayNight ? getTimeOfDay() : "";
             renderPlaymates();
             applyWeather();
+            // Recorded last: if anything above throws, the memo stays stale and
+            // the next call retries rather than silently skipping the backdrop.
+            _sceneSig = loc;
         }
 
-        // ─── DRAGGABLE PET ───
-        function initDraggable() {
-            const wrap = document.getElementById("pet-wrap");
-            const stage = document.getElementById("pet-stage");
+        /* ─── PET MOVEMENT ───────────────────────────────────────────────
+           mv.x / mv.y are the pet's CENTRE, in % of the stage. The old code
+           stored the top-left corner but only applied the centring transform
+           on the first-ever load — and DEFAULT_STATE ships petX:50, so that
+           branch never ran and the pet sat half a body down-and-right of where
+           the drag clamp thought it was. One convention now: centre + a
+           permanent translate(-50%,-50%) in applyPetTransform().
 
-            function setPos(centerXPercent, centerYPercent) {
-                const stageRect = stage.getBoundingClientRect();
-                const wrapRect = wrap.getBoundingClientRect();
-                const wrapW = (wrapRect.width / stageRect.width) * 100;
-                const wrapH = (wrapRect.height / stageRect.height) * 100;
-                let left = centerXPercent - wrapW / 2;
-                let top = centerYPercent - wrapH / 2;
-                left = clamp(left, 0, 100 - wrapW);
-                top = clamp(top, 0, 100 - wrapH);
-                wrap.style.left = left + "%";
-                wrap.style.top = top + "%";
-                wrap.style.transform = "none";
-                state.petX = centerXPercent;
-                state.petY = centerYPercent;
+           The pet is symmetric, so a bare scaleX flip reads as nothing. What
+           sells direction is the lean, which is why the transform carries
+           both. Order matters: scale() before rotate() so the lean mirrors
+           with the facing and always tips forward. */
+        const FLOOR_TOP = 50,
+            FLOOR_BOT = 76; // % of stage — the band the pet walks in
+        const WALK_SPEED = 9, // % of stage width per second
+            RUN_SPEED = 27;
+
+        const mv = {
+            x: 50,
+            y: 64,
+            tx: 50,
+            ty: 64,
+            mode: "idle", // idle | walk | run | jump
+            facing: 1,
+            until: 0,
+            nextDecision: 0,
+            traveling: false,
+            dragging: false,
+        };
+
+        function petWrapEl() { return document.getElementById("pet-wrap"); }
+
+        function depthScale() {
+            const t = clamp((mv.y - FLOOR_TOP) / (FLOOR_BOT - FLOOR_TOP), 0, 1);
+            return 0.86 + t * 0.24;
+        }
+
+        function applyPetTransform() {
+            const wrap = petWrapEl();
+            if (!wrap) return;
+            const d = depthScale();
+            const lean = mv.traveling || mv.mode === "run" ? 9 : mv.mode === "walk" ? 5 : 0;
+            wrap.style.left = mv.x + "%";
+            wrap.style.top = mv.y + "%";
+            wrap.style.transform =
+                `translate(-50%, -50%) scale(${(mv.facing * d).toFixed(3)}, ${d.toFixed(3)}) rotate(${lean}deg)`;
+            wrap.style.zIndex = 10 + Math.round(mv.y);
+        }
+
+        let _stageRect = null,
+            _stageRectAt = 0;
+
+        function stageRect() {
+            const now = performance.now();
+            if (!_stageRect || now - _stageRectAt > 500) {
+                _stageRect = document.getElementById("pet-stage").getBoundingClientRect();
+                _stageRectAt = now;
+            }
+            return _stageRect;
+        }
+        window.addEventListener("resize", () => { _stageRect = null; });
+
+        /* Anything that owns the pet's body for the moment. Wandering off
+           mid-bath or mid-modal looks like a bug, not a personality. */
+        function petBusy() {
+            const wrap = petWrapEl();
+            if (!wrap) return true;
+            if (state.sleeping || mv.dragging || document.hidden) return true;
+            if (getStage().name === "Egg") return true;
+            const modal = document.getElementById("modal-bg");
+            if (modal && modal.classList.contains("show")) return true;
+            return ["eating", "bathing", "playing", "spin", "dance", "jump"]
+                .some(c => wrap.classList.contains(c));
+        }
+
+        /* Derived, not hardcoded: #pet-wrap is 55% of the stage capped at
+           180px, so its share of the width changes a lot between a phone and a
+           desktop. The arms reach 35% of the box half-width past centre
+           (cx 60 + rx 10 of a 200-unit viewBox), which is what has to stay
+           on screen — the body alone is only 27.5%. */
+        function walkMarginX() {
+            const r = stageRect();
+            const w = petWrapEl().offsetWidth;
+            if (!r.width || !w) return 18;
+            return clamp((w * 0.35 / r.width) * 100, 8, 30);
+        }
+
+        function pickWanderTarget(reach) {
+            const m = walkMarginX();
+            const curious = ((state.traits && state.traits.curious) || 20) / 100;
+            const spread = (20 + curious * 45) * (reach || 1);
+            let tx = mv.x + (Math.random() * 2 - 1) * spread;
+            if (tx < m || tx > 100 - m) tx = 50 + (Math.random() * 2 - 1) * 28;
+            mv.tx = clamp(tx, m, 100 - m);
+            mv.ty = clamp(mv.y + (Math.random() * 2 - 1) * 14, FLOOR_TOP, FLOOR_BOT);
+        }
+
+        function decideNextAction(now) {
+            const traits = state.traits || {};
+            const playful = (traits.playful || 20) / 100;
+            const independent = (traits.independent || 30) / 100;
+
+            if (state.energy < 15) { // too tired to do much but stand there
+                mv.mode = "idle";
+                mv.nextDecision = now + rand(5000, 11000);
+                return;
             }
 
-            if (state.petX !== undefined && state.petX !== null) {
-                setPos(state.petX, state.petY);
+            const jumpChance = state.fun < 40 ? 0.05 : 0.06 + playful * 0.08;
+            const runChance = state.energy > 55 ? 0.15 + playful * 0.22 : 0.04;
+            const stayChance = 0.30 - independent * 0.15;
+            const roll = Math.random();
+
+            if (roll < jumpChance) {
+                /* No setTimeout to take the class off again: the loop owns the
+                   hop's lifetime via mv.until, so a throttled timer can't leave
+                   the pet stuck mid-air. */
+                mv.mode = "hop";
+                mv.until = now + 820;
+                petWrapEl().classList.add("hop");
+            } else if (roll < jumpChance + runChance) {
+                pickWanderTarget(1.9);
+                mv.mode = "run";
+            } else if (roll < jumpChance + runChance + stayChance) {
+                mv.mode = "idle";
+                mv.nextDecision = now + rand(3000, 8000);
             } else {
-                setPos(50, 50);
+                pickWanderTarget(1);
+                mv.mode = "walk";
+            }
+        }
+
+        /* One step toward (tx, ty). Y is converted through the stage aspect so
+           a diagonal walk covers ground at the same rate as a flat one —
+           without it the pet crawls sideways and darts vertically. */
+        function stepToward(dt, speedPct) {
+            const r = stageRect();
+            const aspect = r.height > 0 ? r.width / r.height : 1;
+            const dx = mv.tx - mv.x;
+            const dy = (mv.ty - mv.y) / aspect;
+            const dist = Math.hypot(dx, dy);
+            if (dist < 0.5) { mv.x = mv.tx; mv.y = mv.ty; return true; }
+            if (Math.abs(dx) > 0.4) mv.facing = dx > 0 ? 1 : -1;
+            const step = speedPct * dt;
+            if (step >= dist) { mv.x = mv.tx; mv.y = mv.ty; return true; }
+            mv.x += (dx / dist) * step;
+            mv.y += (dy / dist) * step * aspect;
+            return false;
+        }
+
+        function setGaitClass() {
+            const wrap = petWrapEl();
+            const running = mv.traveling || mv.mode === "run";
+            wrap.classList.toggle("running", running);
+            wrap.classList.toggle("walking", !running && mv.mode === "walk");
+        }
+
+        let _lastFrame = 0;
+
+        function movementFrame(ts) {
+            requestAnimationFrame(movementFrame);
+            const dt = Math.min(0.05, (ts - _lastFrame) / 1000);
+            _lastFrame = ts;
+            if (dt <= 0) return;
+            if (!petWrapEl()) return;
+
+            if (mv.traveling) {
+                stepToward(dt, RUN_SPEED * 1.2);
+                setGaitClass();
+                applyPetTransform();
+                positionPlaymates();
+                return;
             }
 
-            let isDragging = false;
-            let dragOffsetX = 0,
-                dragOffsetY = 0;
+            if (petBusy()) {
+                if (mv.mode !== "idle") {
+                    mv.mode = "idle";
+                    petWrapEl().classList.remove("hop");
+                    mv.nextDecision = ts + rand(600, 1800);
+                }
+                setGaitClass();
+                return;
+            }
 
-            function getPos(e) {
-                const rect = stage.getBoundingClientRect();
-                const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-                const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-                return {
-                    x: ((clientX - rect.left) / rect.width) * 100,
-                    y: ((clientY - rect.top) / rect.height) * 100
-                };
+            const now = ts;
+
+            if (mv.mode === "hop") {
+                if (now >= mv.until) {
+                    petWrapEl().classList.remove("hop");
+                    mv.mode = "idle";
+                    mv.nextDecision = now + rand(1200, 4000);
+                }
+            } else if (mv.mode === "walk" || mv.mode === "run") {
+                const arrived = stepToward(dt, mv.mode === "run" ? RUN_SPEED : WALK_SPEED);
+                if (mv.mode === "run") state.energy = Math.max(0, state.energy - dt * 0.35);
+                if (arrived) {
+                    mv.mode = "idle";
+                    mv.nextDecision = now + rand(900, 3500);
+                }
+            } else if (now >= mv.nextDecision) {
+                decideNextAction(now);
+            }
+
+            setGaitClass();
+            applyPetTransform();
+            positionPlaymates();
+        }
+
+        /* ─── TRAVEL BETWEEN LOCATIONS ───
+           Walk out the nearer edge, hold a tinted veil over the swap, walk in
+           from the other side. The pet is allowed outside 0–100 here; the
+           stage is overflow:hidden so it simply clips. */
+        function waitMs(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+        /* Polls on a timer, NOT requestAnimationFrame. rAF is suspended while
+           the tab is hidden, so an rAF-driven wait could never reach its own
+           timeout — backgrounding the app mid-journey left mv.traveling stuck
+           true and the pet frozen off-stage for the rest of the session.
+           setTimeout still fires (throttled), so the timeout always lands. */
+        function waitUntilArrived(timeoutMs) {
+            return new Promise(resolve => {
+                const t0 = performance.now();
+                (function check() {
+                    if (Math.hypot(mv.tx - mv.x, mv.ty - mv.y) < 1.5 ||
+                        performance.now() - t0 > timeoutMs) return resolve();
+                    setTimeout(check, 32);
+                })();
+            });
+        }
+
+        async function travelTo(locId) {
+            const loc = LOCATIONS.find(l => l.id === locId);
+            if (!loc || mv.traveling) return false;
+            if (state.scene === locId) return false;
+            if (getStage().name === "Egg") { // an egg has no legs
+                state.scene = locId;
+                save();
+                updateScene();
+                return true;
+            }
+
+            const wrap = petWrapEl();
+            const veil = document.getElementById("travel-veil");
+            mv.traveling = true;
+            mv.dragging = false;
+            wrap.classList.remove("dragging", "hop");
+
+            const exitRight = mv.x >= 50;
+            mv.tx = exitRight ? 128 : -28;
+            mv.ty = clamp(mv.y, FLOOR_TOP, FLOOR_BOT);
+            await waitUntilArrived(2500);
+
+            if (veil) {
+                veil.style.background = loc.tint || "#ffffff";
+                veil.classList.add("on");
+            }
+            await waitMs(370);
+
+            state.scene = locId;
+            save();
+            updateScene();
+
+            mv.x = exitRight ? -28 : 128;
+            mv.facing = exitRight ? 1 : -1;
+            mv.tx = rand(26, 74);
+            mv.ty = rand(FLOOR_TOP + 4, FLOOR_BOT);
+            applyPetTransform();
+            positionPlaymates(true);
+
+            if (veil) veil.classList.remove("on");
+            await waitMs(140);
+            await waitUntilArrived(3000);
+
+            // If the walk-in timed out (hidden tab, suspended rAF), don't leave
+            // the pet parked off the edge of the stage.
+            if (Math.hypot(mv.tx - mv.x, mv.ty - mv.y) >= 1.5) {
+                mv.x = mv.tx;
+                mv.y = mv.ty;
+            }
+            mv.traveling = false;
+            mv.mode = "idle";
+            mv.nextDecision = performance.now() + rand(700, 2000);
+            setGaitClass();
+            applyPetTransform();
+            return true;
+        }
+
+        /* ─── DRAGGABLE PET ─── */
+        function initDraggable() {
+            const wrap = petWrapEl();
+            const stage = document.getElementById("pet-stage");
+            let downAt = 0,
+                movedPx = 0,
+                lastClientX = 0,
+                lastClientY = 0;
+
+            function point(e) {
+                const t = e.touches && e.touches[0];
+                return { x: t ? t.clientX : e.clientX, y: t ? t.clientY : e.clientY };
             }
 
             function onStart(e) {
                 e.preventDefault();
-                const rect = stage.getBoundingClientRect();
-                const cx = (e.touches ? e.touches[0].clientX : e.clientX) - rect.left;
-                const cy = (e.touches ? e.touches[0].clientY : e.clientY) - rect.top;
-                const wrapRect = wrap.getBoundingClientRect();
-                const wrapCenterX = wrapRect.left + wrapRect.width / 2 - rect.left;
-                const wrapCenterY = wrapRect.top + wrapRect.height / 2 - rect.top;
-                dragOffsetX = cx - wrapCenterX;
-                dragOffsetY = cy - wrapCenterY;
-                isDragging = true;
+                const p = point(e);
+                downAt = Date.now();
+                movedPx = 0;
+                lastClientX = p.x;
+                lastClientY = p.y;
+                mv.dragging = true;
+                mv.mode = "idle";
+                wrap.classList.remove("hop");
                 wrap.classList.add("dragging");
+                setGaitClass();
             }
 
             function onMove(e) {
-                if (!isDragging) return;
+                if (!mv.dragging) return;
                 e.preventDefault();
+                const p = point(e);
+                movedPx += Math.hypot(p.x - lastClientX, p.y - lastClientY);
+                lastClientX = p.x;
+                lastClientY = p.y;
                 const rect = stage.getBoundingClientRect();
-                const cx = (e.touches ? e.touches[0].clientX : e.clientX) - rect.left;
-                const cy = (e.touches ? e.touches[0].clientY : e.clientY) - rect.top;
-                let centerX = ((cx - dragOffsetX) / rect.width) * 100;
-                let centerY = ((cy - dragOffsetY) / rect.height) * 100;
-                const wrapRect = wrap.getBoundingClientRect();
-                const wrapW = (wrapRect.width / rect.width) * 100;
-                const wrapH = (wrapRect.height / rect.height) * 100;
-                centerX = clamp(centerX, wrapW / 2, 100 - wrapW / 2);
-                centerY = clamp(centerY, wrapH / 2, 100 - wrapH / 2);
-                setPos(centerX, centerY);
-                save();
+                if (!rect.width || !rect.height) return;
+                const halfW = (wrap.offsetWidth / 2 / rect.width) * 100;
+                const halfH = (wrap.offsetHeight / 2 / rect.height) * 100;
+                mv.x = clamp(((p.x - rect.left) / rect.width) * 100, halfW, 100 - halfW);
+                mv.y = clamp(((p.y - rect.top) / rect.height) * 100, halfH, 100 - halfH);
+                mv.tx = mv.x;
+                mv.ty = mv.y;
+                applyPetTransform();
+                positionPlaymates();
             }
 
-            function onEnd(e) {
-                if (isDragging) {
-                    isDragging = false;
-                    wrap.classList.remove("dragging");
-                    save();
-                }
+            function onEnd() {
+                if (!mv.dragging) return;
+                mv.dragging = false;
+                wrap.classList.remove("dragging");
+                // Settle back into the walkable band, then carry on wandering.
+                const m = walkMarginX();
+                mv.ty = clamp(mv.y, FLOOR_TOP, FLOOR_BOT);
+                mv.tx = clamp(mv.x, m, 100 - m);
+                mv.mode = (Math.abs(mv.ty - mv.y) > 1 || Math.abs(mv.tx - mv.x) > 1) ? "walk" : "idle";
+                mv.nextDecision = performance.now() + rand(800, 2200);
+                state.petX = mv.x;
+                state.petY = mv.y;
+                save();
+                // A tap that never really moved is a pet, not a drag.
+                if (movedPx < 8 && Date.now() - downAt < 600) pet();
             }
 
             wrap.addEventListener("mousedown", onStart);
@@ -2405,12 +2958,32 @@
             document.addEventListener("mouseup", onEnd);
             document.addEventListener("touchend", onEnd);
             document.addEventListener("touchcancel", onEnd);
+
+            mv.x = clamp(typeof state.petX === "number" ? state.petX : 50, 20, 80);
+            mv.y = clamp(typeof state.petY === "number" ? state.petY : 64, FLOOR_TOP, FLOOR_BOT);
+            mv.tx = mv.x;
+            mv.ty = mv.y;
+            mv.nextDecision = performance.now() + 1200;
+            applyPetTransform();
+            requestAnimationFrame(movementFrame);
         }
 
-        // ─── PLAYMATES ───
-        function renderPlaymates() {
+        /* ─── PLAYMATES ─── */
+        /* Split in two: renderPlaymates() rebuilds the DOM only when the roster
+           changes, positionPlaymates() just moves them. Rebuilding every frame
+           to follow a walking pet would restart floatMate on all of them. */
+        let _playmateSig = "";
+
+        function renderPlaymates(force) {
             const scene = document.getElementById("scene");
-            scene.querySelectorAll(".playmate").forEach(el => el.remove());
+            const sig = state.playmates.map(p => p.id).join(",");
+            const nodes = scene.querySelectorAll(".playmate");
+            if (!force && sig === _playmateSig && nodes.length === state.playmates.length) {
+                positionPlaymates(true);
+                return;
+            }
+            _playmateSig = sig;
+            nodes.forEach(el => el.remove());
             state.playmates.forEach((pm, idx) => {
                 const div = document.createElement("div");
                 div.className = "playmate" + (idx === 0 ? " follow" : "");
@@ -2419,20 +2992,27 @@
                 label.className = "mate-label";
                 label.textContent = pm.name;
                 div.appendChild(label);
-                const angle = (idx / state.playmates.length) * Math.PI * 2 - Math.PI / 2;
-                const dist = 60 + idx * 8;
-                const wrap = document.getElementById("pet-wrap");
-                const stage = document.getElementById("pet-stage");
-                const wrapRect = wrap.getBoundingClientRect();
-                const stageRect = stage.getBoundingClientRect();
-                const petCX = ((wrapRect.left + wrapRect.width / 2 - stageRect.left) / stageRect.width) * 100;
-                const petCY = ((wrapRect.top + wrapRect.height / 2 - stageRect.top) / stageRect.height) * 100;
-                div.style.left = `calc(${petCX}% + ${Math.cos(angle) * dist}px)`;
-                div.style.top = `calc(${petCY}% + ${Math.sin(angle) * dist}px)`;
-                div.style.transform = "translate(-50%, -50%)";
                 div.style.fontSize = Math.max(20, 34 - idx * 2) + "px";
                 div.style.zIndex = 5 - idx;
                 scene.appendChild(div);
+            });
+            positionPlaymates(true);
+        }
+
+        let _pmLastX = -999,
+            _pmLastY = -999;
+
+        function positionPlaymates(force) {
+            if (!force && Math.abs(mv.x - _pmLastX) < 1.2 && Math.abs(mv.y - _pmLastY) < 1.2) return;
+            _pmLastX = mv.x;
+            _pmLastY = mv.y;
+            const nodes = document.querySelectorAll(".playmate");
+            const n = Math.max(1, nodes.length);
+            nodes.forEach((div, idx) => {
+                const angle = (idx / n) * Math.PI * 2 - Math.PI / 2;
+                const dist = 60 + idx * 8;
+                div.style.left = `calc(${mv.x}% + ${(Math.cos(angle) * dist).toFixed(1)}px)`;
+                div.style.top = `calc(${mv.y}% + ${(Math.sin(angle) * dist).toFixed(1)}px)`;
             });
         }
 
@@ -2451,18 +3031,26 @@
             openShop();
         }
 
-        function changeLocation(locId) {
+        async function changeLocation(locId) {
             if (!state.locationUnlocked.includes(locId)) { toast("🔒 Locked! Keep playing."); return; }
-            state.scene = locId;
-            save();
-            updateScene();
-            updateUI();
-            speak(`Let's go to ${LOCATIONS.find(l=>l.id===locId)?.label||locId}!`);
-            chirp("happy");
+            if (state.sleeping) { sayShort("... zzz"); return; }
+            if (mv.traveling) { toast("Already on the way!"); return; }
+            const label = LOCATIONS.find(l => l.id === locId)?.label || locId;
+            if (state.scene === locId) { toast(`Already at ${label}`); closeModal(); return; }
             closeModal();
+            speak(`Let's go to ${label}!`);
+            chirp("happy");
+            await travelTo(locId);
+            setMoodOverride("excited", 3000);
+            state.fun = Math.min(100, state.fun + 6);
+            state.traits.curious = Math.min(100, state.traits.curious + 1);
+            state.memories.unshift({ desc: `went to ${label}`, when: Date.now() });
+            if (state.memories.length > 20) state.memories.pop();
+            save();
+            updateUI();
         }
 
-        // ─── CAMERA ───
+        /* ─── CAMERA ─── */
         function takePhoto() {
             const flash = document.getElementById("flash");
             flash.classList.remove("on");
@@ -2564,7 +3152,7 @@
                 toast("Photos cleared"); }
         }
 
-        // ─── HUNT ───
+        /* ─── HUNT ─── */
         let huntGame = null;
 
         function startHunt() {
@@ -2641,7 +3229,7 @@
                     startHunt(); }; }, 50);
         }
 
-        // ─── ACTIONS ───
+        /* ─── ACTIONS ─── */
         function feed(foodId) {
             if (state.sleeping) return sayShort("... zzz");
             const food = foodId ? SHOP_FOODS.find(f => f.id === foodId) : SHOP_FOODS.find(f => f.id === "apple");
@@ -2657,7 +3245,8 @@
                 state[k] = Math.min(100, state[k] + v);
             }
             state.traits.affectionate = Math.min(100, state.traits.affectionate + 0.5);
-            state.scene = "home";
+            // Scene left alone on purpose: snapping back to Home from wherever
+            // the pet walked to undoes the travel animation for no reason.
             document.getElementById("pet-wrap").classList.add("eating");
             setTimeout(() => document.getElementById("pet-wrap").classList.remove("eating"), 1500);
             speak(pickReply(["Yum!", "Mmm tasty", "Thank you!", "Nom nom nom"]));
@@ -2671,7 +3260,6 @@
         function water() {
             if (state.sleeping) return sayShort("... zzz");
             if (state.thirst > 92) { speak("Not thirsty!"); return; }
-            state.scene = "home";
             state.thirst = Math.min(100, state.thirst + 40);
             document.getElementById("pet-wrap").classList.add("eating");
             setTimeout(() => document.getElementById("pet-wrap").classList.remove("eating"), 1500);
@@ -2684,13 +3272,16 @@
 
         function bath() {
             if (state.sleeping) return sayShort("... zzz");
+            if (mv.traveling) return;
+            const backTo = state.scene === "bath" ? "home" : state.scene;
             state.scene = "bath";
             state.clean = 100;
             state.energy = Math.max(0, state.energy - 5);
             document.getElementById("pet-wrap").classList.add("bathing");
             setTimeout(() => {
                 document.getElementById("pet-wrap").classList.remove("bathing");
-                state.scene = "home";
+                // Back to wherever the pet was, not unconditionally Home.
+                if (state.scene === "bath") state.scene = backTo;
                 updateScene();
                 save();
             }, 3500);
@@ -2705,7 +3296,6 @@
         function play() {
             if (state.sleeping) return sayShort("... zzz");
             if (state.energy < 15) { speak("So tired... later?"); return; }
-            state.scene = "home";
             state.fun = Math.min(100, state.fun + 25);
             state.energy = Math.max(0, state.energy - 10);
             state.hunger = Math.max(0, state.hunger - 5);
@@ -2720,10 +3310,10 @@
             updateUI();
         }
 
-        function park() {
+        async function park() {
             if (state.sleeping) return sayShort("... zzz");
             if (state.energy < 25) { speak("Too sleepy for outside..."); return; }
-            state.scene = "park";
+            if (mv.traveling) return;
             state.fun = Math.min(100, state.fun + 35);
             state.energy = Math.max(0, state.energy - 20);
             state.clean = Math.max(0, state.clean - 15);
@@ -2732,17 +3322,19 @@
             state.traits.curious = Math.min(100, state.traits.curious + 2);
             state.memories.unshift({ desc: "visited the park", when: Date.now() });
             if (state.memories.length > 20) state.memories.pop();
-            updateScene();
-            setMoodOverride("excited", 4000);
-            spawnHearts(5);
             speak(pickReply(["The park!!", "I love outside!", "So many smells!"]));
             chirp("love");
             earnCoins(5, true);
-            setTimeout(() => { if (state.scene === "park") { state.scene = "home";
-                    updateScene();
-                    save(); } }, 6000);
             save();
             updateUI();
+
+            await travelTo("park");
+            setMoodOverride("excited", 4000);
+            spawnHearts(5);
+            // Head home on its own — unless it was sent somewhere else meanwhile.
+            setTimeout(() => {
+                if (state.scene === "park" && !mv.traveling && !state.sleeping) travelTo("home");
+            }, 9000);
         }
 
         function pet() {
@@ -2814,12 +3406,270 @@
             }
         }
 
-        // ─── CHAT ───
+        /* ─── CHAT ─── */
+        /* ─── CONTACTS OVER CHAT ──────────────────────────────────────────
+           Saves and reads back a name / number / address through the chat box,
+           writing into the same state.contacts the Journal's Contacts tab uses,
+           so anything stored here is visible and deletable there too.
+
+           These commands deliberately bypass learn(). Chat text is fed into
+           state.vocab, and generateSpontaneous() / generateSong() pick random
+           learned words to blurt out — tell the pet a phone number twice and it
+           would eventually sing it. Contact data must not enter that pool. */
+        const FIELD_WORDS = [
+            ["phone", ["contact number", "contact no", "phone number", "mobile number", "cell phone",
+                "cellphone", "cp number", "telephone", "number", "phone", "mobile", "cell", "cp", "tel", "digits"
+            ]],
+            ["address", ["home address", "address", "addy", "location", "place"]],
+            ["email", ["email address", "e-mail", "email", "mail"]],
+            ["notes", ["notes", "note", "info"]],
+        ];
+        const FIELD_LABEL = { phone: "number", address: "address", email: "email", notes: "note" };
+        const FIELD_ICON = { phone: "📞", address: "🏠", email: "✉️", notes: "📝" };
+
+        function escRe(s) { return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"); }
+
+        function escHtml(s) {
+            return String(s == null ? "" : s).replace(/[&<>"']/g,
+                ch => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" } [ch]));
+        }
+
+        // Longest-first, so "phone number" wins over "number".
+        const FIELD_ALT = FIELD_WORDS.flatMap(([, w]) => w)
+            .sort((a, b) => b.length - a.length).map(escRe).join("|");
+
+        function fieldFromWord(w) {
+            const s = String(w).toLowerCase().trim();
+            for (const [key, words] of FIELD_WORDS)
+                if (words.includes(s)) return key;
+            return null;
+        }
+
+        /* Order-independent: "save contact: Ana | 12 Mabini St | 09171234567"
+           works as well as name/number/address, because each piece is
+           classified by what it looks like rather than by position. */
+        function classifyValue(v) {
+            const s = String(v).trim();
+            if (/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(s)) return "email";
+            const digits = (s.match(/\d/g) || []).length;
+            const solid = s.replace(/[\s()\-+.]/g, "").length;
+            if (digits >= 6 && solid && digits / solid > 0.7) return "phone";
+            return "address";
+        }
+
+        function cleanName(n) {
+            let s = String(n).trim()
+                .replace(/^(?:that|the|a|an)\s+/i, "")
+                .replace(/[?.!,;:]+$/, "").trim();
+            if (/^(?:my|mine|me|myself|i)$/i.test(s)) return "Me";
+            s = s.replace(/^my\s+/i, ""); // "my mom's number" -> "mom"
+            return s.trim();
+        }
+
+        // Deliberately strict. A loose name pattern turns ordinary sentences
+        // into junk contacts, and a silently-created contact is worse than an
+        // unrecognised command.
+        function validName(s) {
+            return !!s && s.length <= 40 && s.split(/\s+/).length <= 4 &&
+                /^[\p{L}\p{N}][\p{L}\p{N} .'\-]*$/u.test(s);
+        }
+
+        function findContact(name) {
+            const n = String(name).toLowerCase().trim();
+            if (!n) return null;
+            return state.contacts.find(c => (c.name || "").toLowerCase() === n) ||
+                state.contacts.find(c => (c.name || "").toLowerCase().startsWith(n)) ||
+                state.contacts.find(c => (c.name || "").toLowerCase().includes(n)) || null;
+        }
+
+        function upsertContact(name, patch) {
+            let c = findContact(name);
+            let created = false;
+            if (!c) {
+                // "my mom's number" leaves the name lowercased; tidy it for
+                // display without touching names the user already capitalised.
+                const display = name === name.toLowerCase() ?
+                    name.replace(/\b\p{L}/gu, ch => ch.toUpperCase()) : name;
+                c = { id: uid(), name: display, phone: "", address: "", email: "", notes: "" };
+                state.contacts.push(c);
+                created = true;
+            }
+            const changed = [];
+            for (const [k, v] of Object.entries(patch)) {
+                if (!v) continue;
+                const replaced = c[k] && c[k] !== v;
+                c[k] = v;
+                changed.push({ field: k, value: v, replaced });
+            }
+            return { contact: c, created, changed };
+        }
+
+        function contactCard(c) {
+            const bits = [];
+            if (c.phone) bits.push(`${FIELD_ICON.phone} ${c.phone}`);
+            if (c.address) bits.push(`${FIELD_ICON.address} ${c.address}`);
+            if (c.email) bits.push(`${FIELD_ICON.email} ${c.email}`);
+            if (c.notes) bits.push(`${FIELD_ICON.notes} ${c.notes}`);
+            return bits.length ? `${c.name} — ${bits.join("  ")}` : `I know ${c.name}, but nothing else about them yet.`;
+        }
+
+        function tryContactCommand(raw) {
+            const text = raw.trim();
+            const t = text.toLowerCase();
+            let m;
+
+            // ── list everything ──
+            if (/^(?:list|show|see|read)\s+(?:me\s+)?(?:my\s+|all\s+)?contacts\b/.test(t) ||
+                /^(?:my|all)\s+contacts\b/.test(t) ||
+                /^who\s+do\s+you\s+(?:remember|know)\b/.test(t)) {
+                if (!state.contacts.length) return "I haven't saved anyone yet. Try: remember Ana's number is 0917...";
+                state.contacts.forEach(c => log("pet", contactCard(c)));
+                return `I remember ${state.contacts.length} ${state.contacts.length === 1 ? "person" : "people"}!`;
+            }
+
+            // ── forget ──
+            m = text.match(/^(?:forget|delete|remove)\s+(?:the\s+)?(?:contact\s+)?(.+?)[?.!]*$/i);
+            if (m) {
+                const name = cleanName(m[1]);
+                if (validName(name)) {
+                    const c = findContact(name);
+                    if (c) {
+                        state.contacts = state.contacts.filter(x => x.id !== c.id);
+                        return `Okay, I forgot ${c.name}.`;
+                    }
+                    return `I don't have anyone called "${name}".`;
+                }
+            }
+
+            // ── save a whole contact: "save contact: Ana | 0917... | 12 Mabini St" ──
+            m = text.match(/^(?:save|add|new|create|store)\s+(?:a\s+|new\s+)?contact\s*[:\-]?\s*(.+)$/i);
+            if (m) {
+                const parts = (m[1].includes("|") ? m[1].split("|") : m[1].split(","))
+                    .map(s => s.trim()).filter(Boolean);
+                const name = cleanName(parts.shift() || "");
+                if (!validName(name)) return "What name should I save it under?";
+                const patch = {};
+                const leftovers = [];
+                for (const p of parts) {
+                    const kind = classifyValue(p);
+                    if (kind === "address") leftovers.push(p);
+                    else if (!patch[kind]) patch[kind] = p;
+                }
+                if (leftovers.length) patch.address = leftovers.join(", ");
+                const r = upsertContact(name, patch);
+                return `${r.created ? "Saved" : "Updated"} ${r.contact.name}! ${contactCard(r.contact)}`;
+            }
+
+            /* ── first person: "remember my address is ..." / "what's my number"
+               These carry no possessive apostrophe for the possessive patterns
+               below to hook onto, so they need their own pair. Everything
+               first-person is filed under one contact called "Me". */
+            m = text.match(new RegExp(
+                "^(?:(?:please\\s+)?(?:remember|save|note|store|keep)\\s+)?(?:that\\s+)?my\\s+(" +
+                FIELD_ALT + ")\\s+(?:is|are|=|:)\\s+(.+)$", "i"));
+            if (m) {
+                const field = fieldFromWord(m[1]),
+                    value = m[2].trim().replace(/[.!]+$/, "");
+                if (field && value) {
+                    const r = upsertContact("Me", { [field]: value });
+                    const ch = r.changed[0];
+                    return `${ch && ch.replaced ? "Updated" : "Got it"}! ${FIELD_ICON[field]} Your ${FIELD_LABEL[field]}: ${value}`;
+                }
+            }
+            m = text.match(new RegExp(
+                "^(?:what(?:'s| is| was)?|whats|give me|tell me|show me|do you know)?\\s*my\\s+(" +
+                FIELD_ALT + ")\\s*\\??$", "i"));
+            if (m) {
+                const field = fieldFromWord(m[1]);
+                if (field) {
+                    const c = findContact("Me");
+                    if (!c || !c[field]) return `You haven't told me your ${FIELD_LABEL[field]} yet.`;
+                    return `${FIELD_ICON[field]} Your ${FIELD_LABEL[field]}: ${c[field]}`;
+                }
+            }
+
+            // ── save one field: "remember Ana's number is 0917..." ──
+            m = text.match(new RegExp(
+                "^(?:(?:please\\s+)?(?:remember|save|note|store|keep)\\s+)?(?:that\\s+)?" +
+                "([\\p{L}\\p{N} .'\\-]{1,40}?)(?:'s|s'|’s)\\s+(" + FIELD_ALT + ")\\s+(?:is|are|=|:)\\s+(.+)$", "iu"));
+            if (m) {
+                const name = cleanName(m[1]),
+                    field = fieldFromWord(m[2]),
+                    value = m[3].trim().replace(/[.!]+$/, "");
+                if (validName(name) && field && value) {
+                    const r = upsertContact(name, { [field]: value });
+                    const ch = r.changed[0];
+                    return `${ch && ch.replaced ? "Updated" : "Got it"}! ${FIELD_ICON[field]} ${r.contact.name}'s ${FIELD_LABEL[field]}: ${value}`;
+                }
+            }
+
+            // ── same, phrased the other way: "remember the address of Ana is ..." ──
+            m = text.match(new RegExp(
+                "^(?:(?:please\\s+)?(?:remember|save|note|store|keep)\\s+)?(?:the\\s+)?(" + FIELD_ALT +
+                ")\\s+(?:of|for)\\s+([\\p{L}\\p{N} .'\\-]{1,40}?)\\s+(?:is|are|=|:)\\s+(.+)$", "iu"));
+            if (m) {
+                const field = fieldFromWord(m[1]),
+                    name = cleanName(m[2]),
+                    value = m[3].trim().replace(/[.!]+$/, "");
+                if (validName(name) && field && value) {
+                    const r = upsertContact(name, { [field]: value });
+                    const ch = r.changed[0];
+                    return `${ch && ch.replaced ? "Updated" : "Got it"}! ${FIELD_ICON[field]} ${r.contact.name}'s ${FIELD_LABEL[field]}: ${value}`;
+                }
+            }
+
+            // ── ask for one field: "what is Ana's number" / "Ana's address?" ──
+            m = text.match(new RegExp(
+                "^(?:what(?:'s| is| was)?|whats|give me|tell me|show me|do you know)?\\s*(?:the\\s+)?" +
+                "([\\p{L}\\p{N} .'\\-]{1,40}?)(?:'s|s'|’s)\\s+(" + FIELD_ALT + ")\\s*\\??$", "iu")) ||
+                text.match(new RegExp(
+                    "^(?:what(?:'s| is| was)?|whats|give me|tell me|show me|do you know)\\s+(?:the\\s+)?(" +
+                    FIELD_ALT + ")\\s+(?:of|for)\\s+([\\p{L}\\p{N} .'\\-]{1,40}?)\\s*\\??$", "iu"));
+            if (m) {
+                // The two patterns capture name/field in opposite order.
+                let name = cleanName(m[1]),
+                    field = fieldFromWord(m[2]);
+                if (!field) { field = fieldFromWord(m[1]); name = cleanName(m[2]); }
+                if (validName(name) && field) {
+                    const c = findContact(name);
+                    if (!c) return `I don't know anyone called "${name}" yet.`;
+                    if (!c[field]) return `I know ${c.name}, but I don't have their ${FIELD_LABEL[field]}.`;
+                    return `${FIELD_ICON[field]} ${c.name}'s ${FIELD_LABEL[field]}: ${c[field]}`;
+                }
+            }
+
+            // ── ask for everything: "who is Ana" ──
+            m = text.match(/^(?:who(?:'s| is| was)?|whos|tell me about|what do you know about|do you remember)\s+(.+?)[?.!]*$/i);
+            if (m) {
+                const name = cleanName(m[1]);
+                if (validName(name)) {
+                    const c = findContact(name);
+                    // No match falls through to ordinary chat on purpose: "who is
+                    // your best friend" is conversation, not a failed lookup.
+                    if (c) return contactCard(c);
+                }
+            }
+
+            return null;
+        }
+
         function handleUserMessage(rawText) {
             const text = rawText.trim();
             if (!text) return;
             log("me", text);
             if (state.pendingTrick) { finishTraining(text); return; }
+
+            // Checked before tricks and before learn(): a trick word inside
+            // "remember Ana's address is Trick Street" must not hijack it, and
+            // the text must never reach state.vocab.
+            const contactReply = tryContactCommand(text);
+            if (contactReply) {
+                save();
+                chirp("beep");
+                setTimeout(() => speak(contactReply, 7000), 300);
+                return;
+            }
+
             const lower = text.toLowerCase();
             for (const word of Object.keys(state.tricks)) {
                 if (lower.includes(word)) { performTrick(word); return; }
@@ -2967,7 +3817,7 @@
             return `🎵 ${lyrics.join(" ")} 🎵`;
         }
 
-        // ─── TRICKS ───
+        /* ─── TRICKS ─── */
         function performTrick(word) {
             const t = state.tricks[word];
             if (!t) return;
@@ -3050,7 +3900,7 @@
         function finishTraining(text) { state.pendingTrick = null;
             save(); }
 
-        // ─── SHOP ───
+        /* ─── SHOP ─── */
         let shopTab = "foods";
 
         function openShop() {
@@ -3157,45 +4007,144 @@
             });
         }
 
-        // ─── MINI-GAMES ───
+        /* ─── MINI-GAMES ─── */
         function openGames() {
-            // Open games.html in a new window (or use iframe)
-            window.open('games.html', '_blank', 'width=600,height=700,resizable=yes');
-        }
+  // Open games.html in a new window/tab
+  window.open('games.html', '_blank', 'width=600,height=700,resizable=yes');
+}
 
-        // ─── SHOOTER ───
-        let shooter = null;
-        let shooterKeyHandler = null;
+        let catchGame = null;
 
-        function launchShooter() {
-            if (shooter && shooter.running) { closeModal(); return; }
-            openModal("🚀 Shooter Game", `
-            <div class="shooter-container" style="position:relative;">
-              <canvas id="shooterCanvas" width="320" height="480"></canvas>
-              <div class="shooter-hud">
-                <span>❤️ <span id="s-lives">3</span></span>
-                <span>🏆 <span id="s-score">0</span></span>
-                <span>🎯 <span id="s-level">1</span></span>
-              </div>
-              <div class="shooter-overlay show" id="s-overlay">
-                <h2>🚀 Twin-Bee</h2>
-                <p style="font-size:12px;">Move with ← → or tap/drag • Shoot with SPACE or tap</p>
-                <button class="btn-play" id="s-start-btn">▶ Play</button>
-              </div>
-              <div class="shooter-touch-area" id="s-touch-area"></div>
+        function playCatch() {
+            catchGame = { score: 0, misses: 0, round: 0, running: true };
+            openModal("🎯 Catch the treat", `
+            <div class="game-score">
+              <span>Score: <span id="c-score">0</span></span>
+              <span>Round: <span id="c-round">0</span>/10</span>
             </div>
-            <div class="shooter-controls">
-              <button id="s-left">◀</button>
-              <button id="s-right">▶</button>
-              <button class="fire" id="s-fire">🔥 FIRE</button>
-            </div>
-            <p style="font-size:10px; color:#888; text-align:center; margin-top:4px;">High score: ${state.shooterHighScore||0}</p>
+            <div class="game-area" id="catch-area"></div>
+            <p style="font-size:11px; color:#888; text-align:center;">Tap treats before they fall!</p>
           `);
-            // Shooter logic omitted for brevity – it works
-            // Full shooter code is in the complete version
+            setTimeout(nextCatchRound, 400);
         }
 
-        // ─── NOTIFICATIONS ───
+        function nextCatchRound() {
+            if (!catchGame || !catchGame.running) return;
+            const area = document.getElementById("catch-area");
+            if (!area) { catchGame = null; return; }
+            if (catchGame.round >= 10) { endCatch(); return; }
+            catchGame.round++;
+            document.getElementById("c-round").textContent = catchGame.round;
+            const treat = document.createElement("div");
+            treat.className = "game-treat";
+            treat.textContent = ["🍎", "🍬", "🍰", "🍓", "🍩", "🍪", "🍭"][Math.floor(Math.random() * 7)];
+            treat.style.left = (Math.random() * 80 + 5) + "%";
+            let caught = false;
+            treat.onclick = () => {
+                if (caught) return;
+                caught = true;
+                catchGame.score++;
+                document.getElementById("c-score").textContent = catchGame.score;
+                treat.remove();
+                setTimeout(nextCatchRound, 350);
+            };
+            area.appendChild(treat);
+            setTimeout(() => { if (!caught && treat.parentNode) { treat.remove();
+                    catchGame.misses++;
+                    setTimeout(nextCatchRound, 350); } }, 2200);
+        }
+
+        function endCatch() {
+            const s = catchGame.score;
+            catchGame = null;
+            const reward = s * 3 + 5;
+            earnCoins(reward);
+            state.fun = Math.min(100, state.fun + s * 2);
+            save();
+            openModal("Game over!", `
+            <p style="text-align:center; font-size:15px;">Caught <b>${s}</b> treats!</p>
+            <p style="text-align:center; font-size:20px; color:#b58900;">+${reward} 💰</p>
+            <div class="modal-actions">
+              <button class="btn-primary" id="c-again">Play again</button>
+              <button class="btn-secondary" onclick="closeModal()">Done</button>
+            </div>
+          `);
+            setTimeout(() => { document.getElementById("c-again").onclick = () => { closeModal();
+                    playCatch(); }; }, 50);
+        }
+
+        let memGame = null;
+
+        function playMemory() {
+            const icons = ["🍎", "🍰", "🍕", "🎾", "🎨", "💎", "🐱", "🌈"];
+            const cards = [...icons.slice(0, 6)].concat([...icons.slice(0, 6)]).sort(() => Math.random() - 0.5);
+            memGame = { cards, flipped: [], matched: [], moves: 0 };
+            openModal("🃏 Memory match", `
+            <div class="game-score">
+              <span>Moves: <span id="m-moves">0</span></span>
+              <span>Pairs: <span id="m-pairs">0</span>/6</span>
+            </div>
+            <div class="memory-grid" id="mem-grid">
+              ${cards.map((c, i) => `<button class="memory-card" data-idx="${i}" data-icon="${c}"></button>`).join("")}
+            </div>
+          `);
+            setTimeout(() => {
+                document.querySelectorAll(".memory-card").forEach(card => {
+                    card.onclick = () => memFlip(parseInt(card.dataset.idx));
+                });
+            }, 50);
+        }
+
+        function memFlip(idx) {
+            if (!memGame) return;
+            if (memGame.matched.includes(idx) || memGame.flipped.includes(idx)) return;
+            if (memGame.flipped.length >= 2) return;
+            const card = document.querySelector(`[data-idx="${idx}"]`);
+            card.textContent = memGame.cards[idx];
+            card.classList.add("flipped");
+            memGame.flipped.push(idx);
+            if (memGame.flipped.length === 2) {
+                memGame.moves++;
+                document.getElementById("m-moves").textContent = memGame.moves;
+                const [a, b] = memGame.flipped;
+                if (memGame.cards[a] === memGame.cards[b]) {
+                    memGame.matched.push(a, b);
+                    document.querySelectorAll(`[data-idx="${a}"], [data-idx="${b}"]`).forEach(c => c.classList.add("matched"));
+                    document.getElementById("m-pairs").textContent = memGame.matched.length / 2;
+                    memGame.flipped = [];
+                    if (memGame.matched.length === memGame.cards.length) { setTimeout(endMemory, 600); }
+                } else {
+                    setTimeout(() => {
+                        document.querySelectorAll(`[data-idx="${a}"], [data-idx="${b}"]`).forEach(c => {
+                            c.classList.remove("flipped");
+                            c.textContent = "";
+                        });
+                        memGame.flipped = [];
+                    }, 800);
+                }
+            }
+        }
+
+        function endMemory() {
+            const moves = memGame.moves;
+            memGame = null;
+            const reward = Math.max(10, 50 - moves * 2);
+            earnCoins(reward);
+            state.fun = Math.min(100, state.fun + 15);
+            save();
+            openModal("You won!", `
+            <p style="text-align:center; font-size:15px;">Solved in <b>${moves}</b> moves!</p>
+            <p style="text-align:center; font-size:20px; color:#b58900;">+${reward} 💰</p>
+            <div class="modal-actions">
+              <button class="btn-primary" id="m-again">Play again</button>
+              <button class="btn-secondary" onclick="closeModal()">Done</button>
+            </div>
+          `);
+            setTimeout(() => { document.getElementById("m-again").onclick = () => { closeModal();
+                    playMemory(); }; }, 50);
+        }
+
+        /* ─── NOTIFICATIONS ─── */
         function requestNotifications() {
             if (!("Notification" in window)) { toast("Notifications not supported"); return; }
             Notification.requestPermission().then(p => {
@@ -3221,7 +4170,7 @@
             try { new Notification(state.name, { body: msg, icon: "icon.svg", tag: "petpal" }); } catch (e) {}
         }
 
-        // ─── MODALS ───
+        /* ─── MODALS ─── */
         function openModal(title, bodyHTML) {
             document.getElementById("modal-title").textContent = title;
             document.getElementById("modal-body").innerHTML = bodyHTML;
@@ -3232,7 +4181,7 @@
         document.getElementById("modal-close").onclick = closeModal;
         document.getElementById("modal-bg").onclick = (e) => { if (e.target.id === "modal-bg") closeModal(); };
 
-        // ─── JOURNAL / NOTES ───
+        /* ─── JOURNAL / NOTES ─── */
         function openJournal() {
             const noteList = state.notes.map(n =>
                 `<div class="note-item" data-id="${n.id}">
@@ -3250,7 +4199,7 @@
 
             const contactList = state.contacts.map(c =>
                 `<div class="contact-item" data-id="${c.id}">
-              <div><span class="name">${c.name}</span> <span class="phone">${c.phone||''}</span></div>
+              <div><span class="name">${escHtml(c.name)}</span> <span class="phone">${escHtml(c.phone||c.address||'')}</span></div>
               <span class="del" data-del="contact-${c.id}">✕</span>
             </div>`
             ).join("");
@@ -3302,7 +4251,7 @@
                 } else if (tab === "contacts") {
                     list = state.contacts.map(c =>
                         `<div class="contact-item" data-id="${c.id}">
-                  <div><span class="name">${c.name}</span> <span class="phone">${c.phone||''}</span></div>
+                  <div><span class="name">${escHtml(c.name)}</span> <span class="phone">${escHtml(c.phone||c.address||'')}</span></div>
                   <span class="del" data-del="contact-${c.id}">✕</span>
                 </div>`
                     ).join("") || '<p style="color:#888; font-size:12px;">No contacts.</p>';
@@ -3318,6 +4267,7 @@
                 }
                 document.getElementById("j-list").innerHTML = list;
                 document.getElementById("j-add-btn").textContent = addLabel;
+                // rebind deletes
                 document.querySelectorAll("[data-del]").forEach(el => {
                     el.onclick = (e) => {
                         e.stopPropagation();
@@ -3343,6 +4293,7 @@
                         updateUI();
                     };
                 });
+                // bind item clicks for viewing/editing
                 document.querySelectorAll(".note-item, .appt-item, .contact-item, .journal-item").forEach(el => {
                     el.onclick = () => {
                         const id = el.dataset.id;
@@ -3484,9 +4435,14 @@
         function showAddContact() {
             openModal("👤 New Contact", `
             <input type="text" id="contact-name" placeholder="Name" />
-            <input type="text" id="contact-phone" placeholder="Phone" />
+            <input type="text" id="contact-phone" placeholder="Phone / number" />
+            <input type="text" id="contact-address" placeholder="Address" />
             <input type="text" id="contact-email" placeholder="Email" />
             <textarea id="contact-notes" placeholder="Notes" rows="2"></textarea>
+            <p style="font-size:11px; color:#888; margin-top:6px;">
+              Tip: you can also just tell your pet —
+              <em>"remember Ana's number is 0917..."</em>
+            </p>
             <div class="modal-actions">
               <button class="btn-secondary" onclick="closeModal()">Cancel</button>
               <button class="btn-primary" id="contact-save">Save</button>
@@ -3497,9 +4453,10 @@
                     const name = document.getElementById("contact-name").value.trim();
                     if (!name) { toast("Please enter a name."); return; }
                     const phone = document.getElementById("contact-phone").value.trim();
+                    const address = document.getElementById("contact-address").value.trim();
                     const email = document.getElementById("contact-email").value.trim();
                     const notes = document.getElementById("contact-notes").value.trim();
-                    state.contacts.push({ id: uid(), name, phone, email, notes });
+                    state.contacts.push({ id: uid(), name, phone, address, email, notes });
                     save();
                     closeModal();
                     toast("👤 Contact saved!");
@@ -3511,11 +4468,14 @@
         }
 
         function showContactDetail(c) {
+            // Escaped: chat can write these values, and a name containing markup
+            // would otherwise run when the card is opened.
             openModal("👤 Contact", `
-            <p><strong>${c.name}</strong></p>
-            ${c.phone ? `<p style="font-size:12px;">📞 ${c.phone}</p>` : ''}
-            ${c.email ? `<p style="font-size:12px;">✉️ ${c.email}</p>` : ''}
-            ${c.notes ? `<p style="white-space:pre-wrap; background:#f5f5f5; padding:8px; border-radius:8px; margin-top:6px; font-size:12px;">${c.notes}</p>` : ''}
+            <p><strong>${escHtml(c.name)}</strong></p>
+            ${c.phone ? `<p style="font-size:12px;">📞 ${escHtml(c.phone)}</p>` : ''}
+            ${c.address ? `<p style="font-size:12px;">🏠 ${escHtml(c.address)}</p>` : ''}
+            ${c.email ? `<p style="font-size:12px;">✉️ ${escHtml(c.email)}</p>` : ''}
+            ${c.notes ? `<p style="white-space:pre-wrap; background:#f5f5f5; padding:8px; border-radius:8px; margin-top:6px; font-size:12px;">${escHtml(c.notes)}</p>` : ''}
             <div class="modal-actions">
               <button class="btn-secondary" onclick="closeModal();openJournal();">Back</button>
               <button class="btn-danger" onclick="deleteContact('${c.id}')">Delete</button>
@@ -3591,7 +4551,591 @@
             updateUI();
         }
 
-        // ─── MENU ───
+        /* ─── SHOOTER GAME (Twin-Bee style) ─── */
+        let shooter = null;
+        let shooterKeyHandler = null;
+        let shooterRunning = false;
+
+        function launchShooter() {
+            if (shooter && shooter.running) { closeModal(); return; }
+            openModal("🚀 Shooter Game", `
+            <div class="shooter-container" style="position:relative;">
+              <canvas id="shooterCanvas" width="320" height="480"></canvas>
+              <div class="shooter-hud">
+                <span>❤️ <span id="s-lives">3</span></span>
+                <span>🏆 <span id="s-score">0</span></span>
+                <span>🎯 <span id="s-level">1</span></span>
+              </div>
+              <div class="shooter-overlay show" id="s-overlay">
+                <h2>🚀 Twin-Bee</h2>
+                <p style="font-size:12px;">Move with ← → or tap/drag • Shoot with SPACE or tap</p>
+                <button class="btn-play" id="s-start-btn">▶ Play</button>
+              </div>
+              <div class="shooter-touch-area" id="s-touch-area"></div>
+            </div>
+            <div class="shooter-controls">
+              <button id="s-left">◀</button>
+              <button id="s-right">▶</button>
+              <button class="fire" id="s-fire">🔥 FIRE</button>
+            </div>
+            <p style="font-size:10px; color:#888; text-align:center; margin-top:4px;">High score: ${state.shooterHighScore||0}</p>
+          `);
+
+            setTimeout(() => {
+                const canvas = document.getElementById("shooterCanvas");
+                const ctx = canvas.getContext("2d");
+                const overlay = document.getElementById("s-overlay");
+
+                const game = {
+                    running: false,
+                    score: 0,
+                    lives: 3,
+                    level: 1,
+                    player: { x: 160, y: 430, w: 24, h: 24, speed: 4 },
+                    bullets: [],
+                    enemies: [],
+                    enemyBullets: [],
+                    stars: [],
+                    explosions: [],
+                    powerups: [],
+                    frames: 0,
+                    enemySpawnTimer: 0,
+                    enemySpawnRate: 40,
+                    maxEnemies: 5,
+                    keys: { left: false, right: false, fire: false },
+                    touchX: null,
+                    fireCooldown: 0,
+                    combo: 0,
+                    maxCombo: 0,
+                    gameOver: false,
+                };
+
+                for (let i = 0; i < 60; i++) {
+                    game.stars.push({ x: rand(0, 320), y: rand(0, 480), size: rand(0.5, 2), speed: rand(0.3, 1.5) });
+                }
+
+                const keys = game.keys;
+                // ─── FIXED: key handler that respects form inputs ───
+                function safeKeyHandler(e) {
+                    const tag = e.target.tagName?.toLowerCase() || '';
+                    if (tag === 'input' || tag === 'textarea' || tag === 'select' || e.target.isContentEditable) {
+                        return; // ✅ spacebar works in text fields
+                    }
+                    if (e.key === "ArrowLeft" || e.key === "a") { e.preventDefault();
+                        keys.left = true; }
+                    if (e.key === "ArrowRight" || e.key === "d") { e.preventDefault();
+                        keys.right = true; }
+                    if (e.key === " " || e.key === "ArrowUp" || e.key === "w") {
+                        e.preventDefault();
+                        if (game.running && !game.gameOver) fireBullet();
+                    }
+                    if (e.key === "Enter" && game.gameOver) restartShooter();
+                }
+
+                function safeKeyUpHandler(e) {
+                    const tag = e.target.tagName?.toLowerCase() || '';
+                    if (tag === 'input' || tag === 'textarea' || tag === 'select' || e.target.isContentEditable) return;
+                    if (e.key === "ArrowLeft" || e.key === "a") { e.preventDefault();
+                        keys.left = false; }
+                    if (e.key === "ArrowRight" || e.key === "d") { e.preventDefault();
+                        keys.right = false; }
+                    if (e.key === " " || e.key === "ArrowUp" || e.key === "w") { e.preventDefault(); }
+                }
+
+                // Remove old listeners if any
+                if (shooterKeyHandler) {
+                    document.removeEventListener('keydown', shooterKeyHandler);
+                    document.removeEventListener('keyup', shooterKeyHandler);
+                }
+                shooterKeyHandler = safeKeyHandler;
+                document.addEventListener('keydown', safeKeyHandler);
+                document.addEventListener('keyup', safeKeyUpHandler);
+
+                const touchArea = document.getElementById("s-touch-area");
+                touchArea.style.position = "absolute";
+                touchArea.style.inset = "0";
+                touchArea.style.zIndex = "2";
+                touchArea.style.touchAction = "none";
+
+                let touchActive = false;
+                let touchX = null;
+                let touchY = null;
+
+                touchArea.addEventListener("touchstart", (e) => {
+                    e.preventDefault();
+                    const rect = canvas.getBoundingClientRect();
+                    const scaleX = canvas.width / rect.width;
+                    const scaleY = canvas.height / rect.height;
+                    const t = e.touches[0];
+                    touchX = (t.clientX - rect.left) * scaleX;
+                    touchY = (t.clientY - rect.top) * scaleY;
+                    touchActive = true;
+                    if (game.running && !game.gameOver) fireBullet();
+                }, { passive: false });
+
+                touchArea.addEventListener("touchmove", (e) => {
+                    e.preventDefault();
+                    const rect = canvas.getBoundingClientRect();
+                    const scaleX = canvas.width / rect.width;
+                    const scaleY = canvas.height / rect.height;
+                    const t = e.touches[0];
+                    touchX = (t.clientX - rect.left) * scaleX;
+                    touchY = (t.clientY - rect.top) * scaleY;
+                }, { passive: false });
+
+                touchArea.addEventListener("touchend", (e) => {
+                    e.preventDefault();
+                    touchActive = false;
+                    touchX = null;
+                    touchY = null;
+                }, { passive: false });
+
+                document.getElementById("s-left").onmousedown = () => keys.left = true;
+                document.getElementById("s-left").onmouseup = () => keys.left = false;
+                document.getElementById("s-left").ontouchstart = (e) => { e.preventDefault();
+                    keys.left = true; };
+                document.getElementById("s-left").ontouchend = (e) => { e.preventDefault();
+                    keys.left = false; };
+                document.getElementById("s-right").onmousedown = () => keys.right = true;
+                document.getElementById("s-right").onmouseup = () => keys.right = false;
+                document.getElementById("s-right").ontouchstart = (e) => { e.preventDefault();
+                    keys.right = true; };
+                document.getElementById("s-right").ontouchend = (e) => { e.preventDefault();
+                    keys.right = false; };
+                document.getElementById("s-fire").onclick = () => { if (game.running && !game.gameOver) fireBullet(); };
+                document.getElementById("s-fire").ontouchstart = (e) => { e.preventDefault(); if (game.running && !game
+                        .gameOver) fireBullet(); };
+
+                function fireBullet() {
+                    if (game.fireCooldown > 0) return;
+                    game.bullets.push({ x: game.player.x + 10, y: game.player.y - 8, w: 4, h: 12, speed: 7 });
+                    game.bullets.push({ x: game.player.x + 10, y: game.player.y - 8, w: 4, h: 12, speed: 7 });
+                    game.fireCooldown = 8;
+                    if (game.powerups.some(p => p.type === "spread" && p.active)) {
+                        game.bullets.push({ x: game.player.x - 4, y: game.player.y - 4, w: 4, h: 10, speed: 6, dx: -1.5 });
+                        game.bullets.push({ x: game.player.x + 20, y: game.player.y - 4, w: 4, h: 10, speed: 6, dx: 1.5 });
+                    }
+                    chirp("beep");
+                }
+
+                function spawnEnemy() {
+                    const types = ["basic", "fast", "tank"];
+                    let type = types[0];
+                    let r = Math.random();
+                    if (r < 0.2 && game.level > 2) type = "fast";
+                    if (r < 0.1 && game.level > 4) type = "tank";
+
+                    const configs = {
+                        basic: { w: 20, h: 20, hp: 1, speed: 1.2 + game.level * 0.1, score: 10, color: "#ff6b6b" },
+                        fast: { w: 16, h: 16, hp: 1, speed: 2.5 + game.level * 0.1, score: 20, color: "#ffd93d" },
+                        tank: { w: 28, h: 28, hp: 3, speed: 0.8 + game.level * 0.05, score: 30, color: "#6bcbff" },
+                    };
+                    const cfg = configs[type];
+                    const x = rand(10, 310 - cfg.w);
+                    const enemy = {
+                        x,
+                        y: -cfg.h,
+                        w: cfg.w,
+                        h: cfg.h,
+                        hp: cfg.hp,
+                        maxHp: cfg.hp,
+                        speed: cfg.speed,
+                        score: cfg.score,
+                        color: cfg.color,
+                        type,
+                        shootTimer: rand(60, 180),
+                        wobble: rand(0, Math.PI * 2),
+                        wobbleSpeed: rand(0.02, 0.06),
+                    };
+                    game.enemies.push(enemy);
+                }
+
+                function spawnPowerup(x, y) {
+                    if (Math.random() < 0.08) {
+                        const types = ["spread", "speed", "shield"];
+                        const type = types[Math.floor(Math.random() * types.length)];
+                        game.powerups.push({ x, y, w: 16, h: 16, type, active: true, speed: 1.5, icon: type === "spread" ?
+                                "⭐" : type === "speed" ? "⚡" : "🛡" });
+                    }
+                }
+
+                function updateShooter() {
+                    if (!game.running || game.gameOver) return;
+                    game.frames++;
+                    game.fireCooldown = Math.max(0, game.fireCooldown - 1);
+
+                    let dx = 0;
+                    if (keys.left || keys.right) {
+                        if (keys.left) dx = -game.player.speed;
+                        if (keys.right) dx = game.player.speed;
+                    } else if (touchActive && touchX !== null) {
+                        const targetX = touchX - game.player.w / 2;
+                        const diff = targetX - game.player.x;
+                        if (Math.abs(diff) > 2) {
+                            dx = Math.sign(diff) * Math.min(game.player.speed, Math.abs(diff));
+                        }
+                    }
+                    game.player.x = clamp(game.player.x + dx, 0, 320 - game.player.w);
+                    if (touchActive && touchY !== null && touchY < game.player.y - 20) {
+                        if (game.fireCooldown === 0) fireBullet();
+                    }
+
+                    for (const s of game.stars) {
+                        s.y += s.speed;
+                        if (s.y > 480) { s.y = 0;
+                            s.x = rand(0, 320); }
+                    }
+
+                    for (const b of game.bullets) {
+                        b.y -= b.speed;
+                        if (b.dx) b.x += b.dx;
+                    }
+                    game.bullets = game.bullets.filter(b => b.y > -10 && b.x > -10 && b.x < 330);
+
+                    for (const b of game.enemyBullets) {
+                        b.y += b.speed;
+                        b.x += b.dx || 0;
+                    }
+                    game.enemyBullets = game.enemyBullets.filter(b => b.y < 490);
+
+                    for (const e of game.enemies) {
+                        e.y += e.speed;
+                        e.wobble += e.wobbleSpeed;
+                        e.x += Math.sin(e.wobble) * 0.5;
+                        e.x = clamp(e.x, 0, 320 - e.w);
+                        e.shootTimer--;
+                        if (e.shootTimer <= 0 && e.y > 30) {
+                            e.shootTimer = rand(60, 180 - game.level * 5);
+                            const dx = (game.player.x + game.player.w / 2) - (e.x + e.w / 2);
+                            const dy = (game.player.y + game.player.h / 2) - (e.y + e.h / 2);
+                            const dist = Math.sqrt(dx * dx + dy * dy);
+                            if (dist > 0) {
+                                game.enemyBullets.push({
+                                    x: e.x + e.w / 2 - 3,
+                                    y: e.y + e.h,
+                                    w: 6,
+                                    h: 6,
+                                    speed: 2 + game.level * 0.2,
+                                    dx: (dx / dist) * 0.8,
+                                });
+                            }
+                        }
+                    }
+
+                    game.enemySpawnTimer--;
+                    if (game.enemySpawnTimer <= 0 && game.enemies.length < game.maxEnemies + game.level) {
+                        spawnEnemy();
+                        game.enemySpawnTimer = Math.max(15, game.enemySpawnRate - game.level * 2);
+                    }
+
+                    for (const b of game.bullets) {
+                        for (const e of game.enemies) {
+                            if (b.x < e.x + e.w && b.x + b.w > e.x &&
+                                b.y < e.y + e.h && b.y + b.h > e.y) {
+                                e.hp--;
+                                b.y = -100;
+                                if (e.hp <= 0) {
+                                    const idx = game.enemies.indexOf(e);
+                                    if (idx > -1) {
+                                        game.enemies.splice(idx, 1);
+                                        game.score += e.score;
+                                        game.combo++;
+                                        if (game.combo > game.maxCombo) game.maxCombo = game.combo;
+                                        spawnPowerup(e.x + e.w / 2, e.y + e.h / 2);
+                                        game.explosions.push({ x: e.x + e.w / 2, y: e.y + e.h / 2, life: 15, maxLife: 15,
+                                            size: e.w });
+                                        chirp("hunt");
+                                        document.getElementById("s-score").textContent = game.score;
+                                        const newLevel = Math.floor(game.score / 50) + 1;
+                                        if (newLevel > game.level) {
+                                            game.level = newLevel;
+                                            document.getElementById("s-level").textContent = game.level;
+                                            toast(`🎯 Level ${game.level}!`, "achievement");
+                                            chirp("level");
+                                            game.lives = Math.min(5, game.lives + 1);
+                                            document.getElementById("s-lives").textContent = game.lives;
+                                        }
+                                    }
+                                }
+                                break;
+                            }
+                        }
+                    }
+
+                    for (const b of game.enemyBullets) {
+                        const px = game.player.x,
+                            py = game.player.y,
+                            pw = game.player.w,
+                            ph = game.player.h;
+                        if (b.x < px + pw && b.x + b.w > px &&
+                            b.y < py + ph && b.y + b.h > py) {
+                            b.y = 500;
+                            hitPlayer();
+                        }
+                    }
+
+                    for (const e of game.enemies) {
+                        const px = game.player.x,
+                            py = game.player.y,
+                            pw = game.player.w,
+                            ph = game.player.h;
+                        if (e.x < px + pw && e.x + e.w > px &&
+                            e.y < py + ph && e.y + e.h > py) {
+                            const idx = game.enemies.indexOf(e);
+                            if (idx > -1) game.enemies.splice(idx, 1);
+                            hitPlayer();
+                            break;
+                        }
+                    }
+
+                    for (const p of game.powerups) {
+                        p.y += p.speed;
+                        const px = game.player.x,
+                            py = game.player.y,
+                            pw = game.player.w,
+                            ph = game.player.h;
+                        if (p.x < px + pw && p.x + p.w > px &&
+                            p.y < py + ph && p.y + p.h > py) {
+                            p.active = false;
+                            if (p.type === "spread") {
+                                game.powerups = game.powerups.filter(p2 => p2.type !== "spread" || p2 === p);
+                                p.active = true;
+                                p.life = 300;
+                                toast("⭐ Spread shot!", "achievement");
+                            } else if (p.type === "speed") {
+                                game.player.speed = 6;
+                                setTimeout(() => { game.player.speed = 4; }, 5000);
+                                toast("⚡ Speed boost!", "achievement");
+                            } else if (p.type === "shield") {
+                                game.lives = Math.min(5, game.lives + 1);
+                                document.getElementById("s-lives").textContent = game.lives;
+                                toast("🛡 Extra life!", "achievement");
+                            }
+                            chirp("coin");
+                        }
+                    }
+                    game.powerups = game.powerups.filter(p => p.active && p.y < 490);
+
+                    for (const p of game.powerups) {
+                        if (p.life !== undefined) {
+                            p.life--;
+                            if (p.life <= 0) p.active = false;
+                        }
+                    }
+                    game.powerups = game.powerups.filter(p => p.active);
+
+                    game.enemies = game.enemies.filter(e => e.y < 490);
+
+                    if (game.lives <= 0) {
+                        game.gameOver = true;
+                        game.running = false;
+                        if (game.score > state.shooterHighScore) {
+                            state.shooterHighScore = game.score;
+                            save();
+                            toast("🏆 New high score!", "achievement");
+                            checkAchievements();
+                        }
+                        overlay.classList.add("show");
+                        overlay.innerHTML = `
+                  <h2>💥 Game Over</h2>
+                  <p>Score: ${game.score}</p>
+                  <p style="font-size:12px;">Combo: ${game.maxCombo} | Level: ${game.level}</p>
+                  <p style="font-size:11px; color:${game.score>state.shooterHighScore?'#ffd93d':'#888'};">High score: ${state.shooterHighScore}</p>
+                  <button class="btn-play" id="s-restart-btn">🔄 Restart</button>
+                `;
+                        document.getElementById("s-restart-btn").onclick = restartShooter;
+                        document.getElementById("s-score").textContent = game.score;
+                    }
+
+                    document.getElementById("s-lives").textContent = game.lives;
+                    document.getElementById("s-score").textContent = game.score;
+                    document.getElementById("s-level").textContent = game.level;
+
+                    drawShooter(game, ctx);
+                    requestAnimationFrame(updateShooter);
+                }
+
+                function hitPlayer() {
+                    game.lives--;
+                    document.getElementById("s-lives").textContent = game.lives;
+                    chirp("sad");
+                    game.explosions.push({ x: game.player.x + game.player.w / 2, y: game.player.y + game.player.h / 2,
+                        life: 20, maxLife: 20, size: 30 });
+                    game.player.x = 160 - game.player.w / 2;
+                    game.combo = 0;
+                    if (game.lives <= 0) {
+                        game.gameOver = true;
+                        game.running = false;
+                    }
+                }
+
+                function drawShooter(g, ctx) {
+                    ctx.clearRect(0, 0, 320, 480);
+
+                    for (const s of g.stars) {
+                        ctx.fillStyle = `rgba(255,255,255,${0.4 + Math.random()*0.3})`;
+                        ctx.beginPath();
+                        ctx.arc(s.x, s.y, s.size, 0, Math.PI * 2);
+                        ctx.fill();
+                    }
+
+                    for (const p of g.powerups) {
+                        ctx.font = "16px sans-serif";
+                        ctx.textAlign = "center";
+                        ctx.textBaseline = "middle";
+                        ctx.shadowColor = "rgba(255,255,255,0.3)";
+                        ctx.shadowBlur = 8;
+                        ctx.fillText(p.icon, p.x + p.w / 2, p.y + p.h / 2);
+                        ctx.shadowBlur = 0;
+                    }
+
+                    for (const b of g.enemyBullets) {
+                        ctx.fillStyle = "#ff6b6b";
+                        ctx.shadowColor = "#ff6b6b";
+                        ctx.shadowBlur = 8;
+                        ctx.beginPath();
+                        ctx.arc(b.x + 3, b.y + 3, 4, 0, Math.PI * 2);
+                        ctx.fill();
+                        ctx.shadowBlur = 0;
+                    }
+
+                    for (const e of g.enemies) {
+                        ctx.fillStyle = e.color;
+                        ctx.shadowColor = e.color;
+                        ctx.shadowBlur = 10;
+                        ctx.beginPath();
+                        if (e.type === "tank") {
+                            ctx.roundRect(e.x, e.y, e.w, e.h, 4);
+                        } else if (e.type === "fast") {
+                            ctx.beginPath();
+                            ctx.moveTo(e.x + e.w / 2, e.y);
+                            ctx.lineTo(e.x + e.w, e.y + e.h);
+                            ctx.lineTo(e.x, e.y + e.h);
+                            ctx.closePath();
+                        } else {
+                            ctx.roundRect(e.x, e.y, e.w, e.h, 6);
+                        }
+                        ctx.fill();
+                        ctx.shadowBlur = 0;
+                        if (e.maxHp > 1) {
+                            ctx.fillStyle = "#333";
+                            ctx.fillRect(e.x, e.y - 6, e.w, 3);
+                            ctx.fillStyle = "#6bcbff";
+                            ctx.fillRect(e.x, e.y - 6, (e.hp / e.maxHp) * e.w, 3);
+                        }
+                        ctx.fillStyle = "white";
+                        ctx.fillRect(e.x + 4, e.y + 4, 4, 4);
+                        ctx.fillRect(e.x + e.w - 8, e.y + 4, 4, 4);
+                        ctx.fillStyle = "#222";
+                        ctx.fillRect(e.x + 5, e.y + 5, 2, 2);
+                        ctx.fillRect(e.x + e.w - 7, e.y + 5, 2, 2);
+                    }
+
+                    for (const b of g.bullets) {
+                        ctx.fillStyle = "#ffd93d";
+                        ctx.shadowColor = "#ffd93d";
+                        ctx.shadowBlur = 12;
+                        ctx.fillRect(b.x, b.y, b.w, b.h);
+                        ctx.shadowBlur = 0;
+                    }
+
+                    const p = g.player;
+                    ctx.shadowColor = "#6bcbff";
+                    ctx.shadowBlur = 15;
+                    ctx.fillStyle = "#4a8ec4";
+                    ctx.beginPath();
+                    ctx.moveTo(p.x + p.w / 2, p.y);
+                    ctx.lineTo(p.x + p.w, p.y + p.h);
+                    ctx.lineTo(p.x, p.y + p.h);
+                    ctx.closePath();
+                    ctx.fill();
+                    ctx.fillStyle = "#7bc4f0";
+                    ctx.beginPath();
+                    ctx.arc(p.x + p.w / 2, p.y + 8, 6, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.fillStyle = "#3a7a9a";
+                    ctx.fillRect(p.x - 4, p.y + 8, 4, 8);
+                    ctx.fillRect(p.x + p.w, p.y + 8, 4, 8);
+                    ctx.shadowBlur = 0;
+
+                    for (const ex of g.explosions) {
+                        const progress = 1 - ex.life / ex.maxLife;
+                        const size = ex.size * (1 + progress * 1.5);
+                        const alpha = 1 - progress;
+                        ctx.fillStyle = `rgba(255,200,50,${alpha*0.6})`;
+                        ctx.beginPath();
+                        ctx.arc(ex.x, ex.y, size, 0, Math.PI * 2);
+                        ctx.fill();
+                        ctx.fillStyle = `rgba(255,100,50,${alpha*0.4})`;
+                        ctx.beginPath();
+                        ctx.arc(ex.x, ex.y, size * 0.6, 0, Math.PI * 2);
+                        ctx.fill();
+                        ex.life--;
+                    }
+                    g.explosions = g.explosions.filter(ex => ex.life > 0);
+
+                    if (g.combo > 2) {
+                        ctx.fillStyle = "#ffd93d";
+                        ctx.font = "14px sans-serif";
+                        ctx.textAlign = "center";
+                        ctx.fillText(`🔥 ${g.combo}x`, 160, 30);
+                    }
+                }
+
+                function restartShooter() {
+                    game.running = false;
+                    game.gameOver = false;
+                    game.score = 0;
+                    game.lives = 3;
+                    game.level = 1;
+                    game.combo = 0;
+                    game.maxCombo = 0;
+                    game.bullets = [];
+                    game.enemies = [];
+                    game.enemyBullets = [];
+                    game.explosions = [];
+                    game.powerups = [];
+                    game.frames = 0;
+                    game.enemySpawnTimer = 30;
+                    game.player.x = 160 - game.player.w / 2;
+                    game.player.y = 430;
+                    game.fireCooldown = 0;
+                    document.getElementById("s-lives").textContent = 3;
+                    document.getElementById("s-score").textContent = 0;
+                    document.getElementById("s-level").textContent = 1;
+                    overlay.classList.remove("show");
+                    game.running = true;
+                    updateShooter();
+                }
+
+                document.getElementById("s-start-btn").onclick = () => {
+                    overlay.classList.remove("show");
+                    game.running = true;
+                    updateShooter();
+                };
+
+                if (!CanvasRenderingContext2D.prototype.roundRect) {
+                    CanvasRenderingContext2D.prototype.roundRect = function(x, y, w, h, r) {
+                        if (r > w / 2) r = w / 2;
+                        if (r > h / 2) r = h / 2;
+                        this.moveTo(x + r, y);
+                        this.lineTo(x + w - r, y);
+                        this.quadraticCurveTo(x + w, y, x + w, y + r);
+                        this.lineTo(x + w, y + h - r);
+                        this.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+                        this.lineTo(x + r, y + h);
+                        this.quadraticCurveTo(x, y + h, x, y + h - r);
+                        this.lineTo(x, y + r);
+                        this.quadraticCurveTo(x, y, x + r, y);
+                        return this;
+                    };
+                }
+
+                drawShooter(game, ctx);
+            }, 100);
+        }
+
+        /* ─── MENU ─── */
         function openMenu() {
             const t = state.traits;
             const traitList = Object.entries(t).sort((a, b) => b[1] - a[1])
@@ -3767,7 +5311,7 @@
             }, 50);
         }
 
-        // ─── UI UPDATE ───
+        /* ─── UI UPDATE ─── */
         function updateUI() {
             document.getElementById("pet-name").textContent = state.name;
             const stage = getStage();
@@ -3789,11 +5333,22 @@
             }).join("");
 
             drawPet();
+
+            /* .sleeping / .happy / .sad were styled but never applied — the
+               sleep-breathing and sad-sway animations had no way to fire.
+               The walk/run rules sit after these in the stylesheet, so a
+               moving pet still gets its gait. */
+            const wrap = document.getElementById("pet-wrap");
+            const mood = state.sleeping ? "asleep" : getMood();
+            wrap.classList.toggle("sleeping", !!state.sleeping);
+            wrap.classList.toggle("happy", mood === "happy" || mood === "loved" || mood === "excited");
+            wrap.classList.toggle("sad", mood === "sad" || mood === "sick");
+
             document.getElementById("sleep-label").textContent = state.sleeping ? "Wake" : "Sleep";
             updateScene();
         }
 
-        // ─── TICK ───
+        /* ─── TICK ─── */
         function tick() {
             const now = Date.now();
             const dtSec = Math.min(60, (now - state.lastTick) / 1000);
@@ -3857,7 +5412,7 @@
             save();
         }
 
-        // ─── BINDINGS ───
+        /* ─── BINDINGS ─── */
         document.querySelectorAll(".action").forEach(btn => {
             btn.addEventListener("click", () => {
                 const act = btn.dataset.act;
@@ -3896,11 +5451,12 @@
         document.getElementById("shop-btn").onclick = openShop;
         document.getElementById("camera-btn").onclick = takePhoto;
         document.getElementById("journal-btn").onclick = openJournal;
-        document.getElementById("pet").addEventListener("click", () => { pet();
-            updateUI();
-            save(); });
+        /* #pet is pointer-events:none, so the click listener that used to live
+           here never fired — tapping the pet did nothing. Petting is now
+           triggered from the drag handler's tap branch in initDraggable(),
+           which can tell a tap from a drag. */
 
-        // ─── INIT ───
+        /* ─── INIT ─── */
         if (state.totalMessages === 0 && state.name === "Blob" && !localStorage.getItem(STORAGE_KEY)) {
             save();
             setTimeout(() => {
@@ -3933,15 +5489,27 @@
             }, 300);
         }
 
-        // ─── START ───
         checkDailyLogin();
         initTTS();
         updateScene();
         updateUI();
         initDraggable();
 
-        // Location unlocks
         setTimeout(() => {
+            // Migration: saves made before these places existed keep their old
+            // unlock list, so the always-available ones are backfilled here.
+            ["home", "park", "bath", "hospital"].forEach(id => {
+                if (!state.locationUnlocked.includes(id)) { state.locationUnlocked.push(id);
+                    save(); }
+            });
+            if (state.totalMessages > 10 && !state.locationUnlocked.includes("school")) { state.locationUnlocked.push(
+                    "school");
+                save(); }
+            if (state.totalCoinsEarned > 60 && !state.locationUnlocked.includes("mall")) { state.locationUnlocked.push(
+                    "mall");
+                save(); }
+            if (state.tricksLearned > 2 && !state.locationUnlocked.includes("lab")) { state.locationUnlocked.push("lab");
+                save(); }
             if (ageInHours() > 5 && !state.locationUnlocked.includes("beach")) { state.locationUnlocked.push("beach");
                 save(); }
             if (ageInHours() > 12 && !state.locationUnlocked.includes("forest")) { state.locationUnlocked.push("forest");
@@ -3964,11 +5532,10 @@
         setInterval(drawPet, 500);
         setInterval(save, 5000);
 
-        // At the very end of your script, after all definitions:
-document.addEventListener('DOMContentLoaded', function() {
-  initDraggable();
-  // other init code...
-  });
+        document.addEventListener("visibilitychange", () => {
+            if (!document.hidden) { tick();
+                updateUI(); }
+        });
 
         if ("serviceWorker" in navigator) {
             window.addEventListener("load", () => {
@@ -3976,7 +5543,7 @@ document.addEventListener('DOMContentLoaded', function() {
             });
         }
 
-        // ─── EXPOSE ───
+        // Expose for inline
         window.feed = feed;
         window.water = water;
         window.bath = bath;
@@ -4003,6 +5570,8 @@ document.addEventListener('DOMContentLoaded', function() {
         window.earnCoins = earnCoins;
         window.buyPlaymate = buyPlaymate;
         window.checkAchievements = checkAchievements;
+        window.playCatch = playCatch;
+        window.playMemory = playMemory;
         window.launchShooter = launchShooter;
         window.openJournal = openJournal;
         window.save = save;
@@ -4011,7 +5580,9 @@ document.addEventListener('DOMContentLoaded', function() {
         window.deleteContact = deleteContact;
         window.deleteJournal = deleteJournal;
 
-        console.log("🐾 Pet is now visible and draggable!");
+        console.log("🐾 PetPal v4 loaded! Journal, Notes, Contacts, Appointments + Twin-Bee Shooter (spacebar fixed!)");
+        console.log(`💰 ${state.coins} coins | 📸 ${state.photos.length} photos | 📓 ${state.notes.length} notes`);
+        console.log(`🚀 High score: ${state.shooterHighScore}`);
     </script>
 </body>
 </html>
