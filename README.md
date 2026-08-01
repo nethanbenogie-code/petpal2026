@@ -1,0 +1,328 @@
+# PetPal 🐣
+
+A Tamagotchi-style virtual pet that lives in your browser. It grows, gets hungry,
+wanders around on its own, learns words from your chat, and remembers things for
+you. No accounts, no server, no tracking — everything stays in your browser's
+local storage.
+
+No build step and no npm install — the only dependency is three.js, vendored in
+`vendor/` so the app still works with no network at all.
+
+---
+
+## Features
+
+**The pet**
+- Five life stages — Egg → Baby → Kid → Teen → Adult — reached by real elapsed time
+- **Levels 1–100** earned by playing, with combat stats that grow alongside —
+  see [Levels](#levels)
+- **Turn-based battles** against 17 monsters and bosses, all modelled in 3D —
+  see [Battles](#battles)
+- Six needs that drain continuously: Full, Hydration, Clean, Rest, Fun, Health
+- Moods driven by those stats, with matching faces and animations
+- Personality traits (playful, affectionate, talkative, curious, independent) that
+  shift based on how you treat it
+- Walks, runs, hops and wanders the screen by itself; drag it anywhere, tap to pet it
+- Travels between locations — walks off one side of the screen and arrives from the other
+- **3D pet** rendered with three.js — turns to face where it's walking, swings its
+  limbs in depth, and squints, pouts or sleeps with its mood. Toggle it in
+  **⚙ Menu → 🧊 3D pet**; the original SVG pet is still there and is used
+  automatically wherever WebGL isn't available
+
+**Care & play**
+- Feed, water, bathe, play, heal, sleep
+- 17 locations, each with its own backdrop and scenery
+- Shop for food, hats, glasses, scarves and animal playmates that follow the pet
+- Weather system: clear, cloudy, rain, snow, storm, fog
+- Automatic day/night cycle tied to your real clock
+- Teach it tricks with your own command words
+- Achievements, daily login streaks, coins
+
+**Chat**
+- Talk to it and it learns your vocabulary, then works your words into its own chatter
+- Optional speech synthesis (it talks back) and voice input (speech recognition)
+- Save and recall contacts by chatting — see [Contacts by chat](#contacts-by-chat)
+
+**Extras**
+- Journal with notes, appointments, contacts and diary entries
+- Camera that snapshots the pet and its scene into a gallery
+- Built-in arcade: Tetris, Galactica and Snake
+- Installable as a PWA and fully playable offline
+
+---
+
+## Running it
+
+It must be served over HTTP. The app is built from ES modules, and browsers
+block those on `file://` — double-clicking `index.html` will load the page shell
+and nothing else. Service workers don't register on `file://` either, so this is
+also what the PWA install and offline caching need.
+
+```bash
+python -m http.server 8000
+```
+
+Then visit `http://localhost:8000`. Any static host works — GitHub Pages, Netlify,
+a Raspberry Pi on your LAN.
+
+Designed portrait-first for phones; the layout adapts down to 375px wide.
+
+---
+
+## Contacts by chat
+
+The pet can hold onto a name, number and address, and give them back later. These
+go into the same store as **Journal → 📇 Contacts**, so you can browse and delete
+them there too.
+
+**Saving**
+
+```
+remember Ana's number is 0917 123 4567
+Ana's address is 12 Mabini St, Cebu City
+remember my mom's number is 09998887777
+remember the address of Ben is 99 New Street
+my number is 0905 111 2222
+save contact: Ben Cruz | ben@mail.com | 0922 555 1212 | 7 Bonifacio Rd
+```
+
+The leading verb (`remember` / `save` / `note` / `store` / `keep`) is optional
+except in the last form. Field words are flexible — *number, phone, mobile, cell,
+cp, contact number, tel, address, addy, location, email, notes*. Anything phrased
+with **my** is filed under a contact called "Me". In `save contact:` the pieces are
+identified by what they look like, so order doesn't matter.
+
+**Reading back**
+
+```
+what is Ana's number
+Ana's address?
+what's the number of Ana
+what's my address
+who is Ana
+list contacts
+forget Ana
+```
+
+Unknown names get *"I don't know anyone called Carlo yet"*; a known person missing
+that field gets *"I know Ana, but I don't have their address."* It never invents a
+value.
+
+Contact text deliberately **skips the vocabulary learner**. Ordinary chat feeds
+`state.vocab`, and the pet blurts learned words out at random — without this, a
+phone number told twice could end up in its idle chatter.
+
+---
+
+## Levels
+
+Two progressions run side by side and they are **not** the same thing:
+
+- **Stage** (Egg → Baby → Kid → Teen → Adult) is *age* — pure elapsed real time.
+  A neglected pet still becomes an Adult.
+- **Level** (1 → 100) is *experience* — earned only by doing things.
+
+XP comes from care actions, chatting, tricks, photos, exploring new locations,
+hunting and achievements. Each level pays out `10 + level × 5` coins, so late
+levels stay worth reaching. Progress shows as a bar under the top bar and a
+`Lv n` badge by the pet's name; **⚙ Menu → 📊 Level & stats** has the details.
+
+The curve is `5n² + 10n` cumulative — level 2 at 15 XP, level 10 at 495, level
+50 at 12,495, level 100 at 49,995. Deliberately fast at the start so the bar
+visibly moves on day one, and a couple of months of steady play to cap out.
+
+Only the XP **total** is stored. Level, progress and every combat stat are
+derived from it at read time, so the curve can be retuned later without
+migrating or corrupting a single save.
+
+Combat stats (Max HP, Attack, Defence, Speed) rise with level and are nudged by
+personality — Attack follows *playful*, Defence *affectionate*, Speed *curious*,
+Max HP *independent*. Nothing consumes them yet; they're the foundation for
+battles.
+
+## Battles
+
+Fights happen in `battle.html`, a separate window with its own 3D arena — your
+actual pet model facing an actual monster model.
+
+**Starting a fight**
+- **⚔️ Hunt** — seek out a monster themed to wherever you are
+- **Random encounters** while exploring away from home (roughly one per couple
+  of minutes outdoors, never twice within three minutes)
+- **⚙ Menu → ★ Zone boss** — one boss per zone; first clear pays double
+- **⚙ Menu → 🗓 Daily challenge** — one escalating fight a day, the same monster
+  for everyone on a given date
+
+**Fighting** — Attack, plus a skill for every trick your pet knows. Spin and
+Slam hit hard, Lullaby heals, Brace raises defence, Taunt weakens the enemy,
+Dazzle blunts its next hit, Focus loads the next strike. Food from your
+inventory heals mid-fight. Bosses can't be fled.
+
+**11 monsters and 6 bosses**, none of them sprites — each is a list of
+primitive shapes assembled at runtime, same as the pet. Adding one is a data
+edit, not an art job.
+
+Monsters are scaled to **your** level, not grown from fixed numbers, so a fight
+means the same thing at level 5 and level 95. Measured across levels 1→100:
+tier 1 wins ~100% of the time leaving ~69% HP in about 5 turns; tiers 2 and 3
+are real fights ending near 28% HP; bosses sit around 30% and run 15+ turns. A
+pet that has learned no tricks wins only ~12% against tier 2 — training is
+supposed to matter.
+
+Losing costs nothing but pride and pays a quarter of the XP. Fleeing pays
+nothing.
+
+## Locations
+
+Reached from **⚙ Menu → 📍 Locations**. Park also has its own button in the action bar.
+
+| Place | Unlocks at |
+| --- | --- |
+| 🏠 Home · 🌳 Park · 🛁 Bath · 🏥 Hospital | available from the start |
+| 🏫 School | more than 10 chat messages |
+| 🏖 Beach | pet older than 5 hours |
+| 🛍 Mall | 60+ coins earned (lifetime) |
+| 🔬 Lab | 3+ successful tricks performed |
+| 🌲 Forest | pet older than 12 hours |
+| 🏙 City | more than 30 chat messages |
+| ⛰ Mountain | 100+ coins earned |
+| 🚀 Space | more than 5 creatures caught in Hunt |
+| ❄️ Snow | more than 3 photos taken |
+| 🌧 Rain | more than 2 playmates owned |
+
+🌅 Dusk, 🌄 Dawn and 🌙 Night appear automatically with the day/night cycle and
+while the pet sleeps.
+
+---
+
+## Your data
+
+Everything lives in `localStorage` under the key `petpal.v4`, on your device only.
+Nothing is uploaded and there are no network requests at runtime — every asset,
+three.js included, is served from this folder.
+
+Worth knowing: once you start saving contacts, that key holds real personal
+information in plain text. It rides along in any browser profile backup, and
+clearing site data for the page erases the pet along with it. **⚙ Menu → 🗑 Reset
+pet** wipes it deliberately.
+
+If voice is enabled, retrieved phone numbers are read aloud by speech synthesis.
+
+---
+
+## Project layout
+
+```
+index.html        markup + CSS; loads js/main.js as a module
+js/
+  state.js        constants, the save file, shared helpers
+  ui.js           toast, chat log, bubble, sound, voice in/out
+  economy.js      coins, achievements, daily streak
+  scene.js        weather, the pet's SVG artwork, location backdrops
+  petmove.js      wander/run/hop loop, travel, dragging, playmates
+  media.js        camera and gallery, Hunt
+  actions.js      feed, water, bath, play, park, pet, heal, sleep
+  chat.js         messages, vocabulary, replies, contacts-by-chat
+  tricks.js       teaching and performing tricks
+  shop.js         food, accessories, playmates
+  minigames.js    Catch, arcade launcher
+  journal.js      notifications, modals, notes/appts/contacts/diary
+  shooter.js      in-app Twin-Bee style shooter
+  menu.js         settings menu
+  pet3d.js        three.js pet model, animation and face
+  rpg.js          XP curve, levels 1–100, derived combat stats
+  monsters.js     bestiary + the primitive-part recipe for each 3D model
+  battle.js       turn-based combat engine (pure logic, no DOM)
+  encounters.js   how fights start, and how rewards get home
+  main.js         UI refresh, one-second tick, bindings, boot
+vendor/
+  three.module.js three.js r185 (ESM entry, re-exports the core)
+  three.core.js   its sibling — three.module.js is useless without it
+battle.html       the battle screen — its own window, 3D arena
+games.html        standalone arcade (Tetris, Galactica, Snake)
+sw.js             service worker, cache-first for offline play
+manifest.json     PWA manifest
+icon.svg          source icon
+icon-192.png      PWA icons
+icon-512.png
+```
+
+The pet itself is drawn as inline SVG generated in JavaScript, so it recolours and
+changes shape per life stage and mood without any image assets.
+
+The working folder also contains `files.zip` and a `New folder/` holding an older
+copy of the app. Neither is used at runtime — delete them or add them to
+`.gitignore` before publishing.
+
+---
+
+## Development notes
+
+There's no toolchain, so a few things are easy to get wrong:
+
+- **Never read another module's bindings at import time.** `state.js` sits at
+  the root of the graph but imports `actions.js`, which imports `main.js`, which
+  imports `state.js` — a cycle. Cycles are fine in ES modules *provided* no
+  module touches another's exports while it is still evaluating. Two top-level
+  `console.log`s reading `state` broke `battle.html` with "Cannot access 'state'
+  before initialization" and a blank page, because that entry point evaluates
+  the cycle in a different order than `index.html` does. Function bodies are
+  safe; module top level is not.
+- **Anything imported by `battle.html` must tolerate a page without the app
+  shell.** `main.js` gates all its wiring and boot on `IS_APP_SHELL`, and
+  `journal.js` null-checks its modal handlers, for exactly this reason. A module
+  that throws during evaluation logs nothing of its own — the page just renders
+  empty.
+- **Bump `CACHE` in `sw.js` whenever you add or rename a file.** Fetches are
+  cache-first and `activate` only clears caches with a *different* name, so
+  forgetting this pins the old build on every existing install — they'll never
+  fetch your new files at all.
+- **Only what `main.js` puts on `window` is reachable from inline HTML handlers.**
+  Module scope isn't global. If you add an `onclick="foo()"` to a template string,
+  add `window.foo = foo` in `main.js` too or it throws at click time.
+- **Animation lives in CSS, not in the redraw.** `drawPet()` rebuilds the SVG via
+  `innerHTML`, which restarts every CSS animation inside it. It is guarded by a
+  signature so it only rebuilds when something visual actually changed — if you add
+  a new visual input, add it to that signature or the pet will stop updating for it.
+- **`updateScene()` and `applyWeather()` are guarded the same way** and for the
+  same reason. Rebuilding scenery every tick restarts the rain and the stars.
+- **Never call `classList.remove("")`.** It throws `SyntaxError`, and the Home
+  location's `bgClass` is an empty string. This exact mistake once aborted the whole
+  startup script.
+- **Pet position is centre-based**, in percent of the stage, with a permanent
+  `translate(-50%, -50%)`. Don't mix in top-left coordinates.
+- After editing, hard-reload (Ctrl+F5). The service worker caches aggressively, and
+  `games.html` opens in a separate window with its own cache.
+
+---
+
+## Known issues
+
+- **Unlocks are only checked on page load.** Cross a threshold mid-session and the
+  new location stays locked until you reload.
+- **Catch is unreachable from the UI.** It's fully implemented and exposed on
+  `window`, but nothing links to it (`playCatch()` from the console). Hunt used
+  to have the same problem — it is now the ⚔️ Hunt button and starts a battle,
+  which also makes 🚀 Space reachable, since that unlock counts hunt wins.
+- **Dusk, Dawn and Night can't be chosen manually.** They appear in the location
+  picker but no rule ever unlocks them, so they stay at 🔒. They still show up on
+  their own via the day/night cycle.
+- **`games.html` isn't precached** by the service worker, so the arcade needs one
+  online visit before it works offline.
+- The Photo feature checks for `html2canvas` but the library isn't bundled, so
+  snapshots always use the built-in canvas fallback.
+
+---
+
+## Browser support
+
+Needs a reasonably current browser — it uses CSS `transform-box: fill-box` on SVG,
+`aspect-ratio`, optional chaining and Unicode regex property escapes. Chrome, Edge,
+Firefox and Safari 15+ are fine. Speech synthesis and voice input are optional and
+degrade quietly where unsupported.
+
+---
+
+## License
+
+Not yet specified — add one before publishing if you want others to reuse it.

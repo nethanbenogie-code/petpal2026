@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no" />
+<title>PetPal — Battle</title>
+<link rel="icon" type="image/svg+xml" href="icon.svg" />
+<style>
+    :root {
+        --ink: #1a2b0f;
+        --gold: #f7d774;
+        --danger: #e56b6f;
+        --ok: #7bc47f;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+    html, body { height: 100%; overflow: hidden; }
+    body {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+        background: radial-gradient(circle at 50% 0%, #2b3a52, #131a26 70%);
+        color: #f2f5f8;
+        display: flex; align-items: center; justify-content: center;
+        user-select: none; -webkit-user-select: none;
+    }
+    .arena {
+        width: 100%; max-width: 460px; height: 100dvh; max-height: 900px;
+        display: flex; flex-direction: column; gap: 8px; padding: 10px;
+        position: relative;
+    }
+    /* ─── combatant bars ─── */
+    .bars { display: flex; flex-direction: column; gap: 6px; flex-shrink: 0; }
+    .who { display: flex; align-items: center; gap: 8px; font-size: 12px; font-weight: 700; }
+    .who .nm { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .who .lv {
+        background: rgba(255,255,255,.14); padding: 1px 7px; border-radius: 999px;
+        font-size: 10px; flex-shrink: 0;
+    }
+    .hp-track { height: 9px; background: rgba(0,0,0,.45); border-radius: 5px; overflow: hidden; }
+    .hp-fill { height: 100%; width: 100%; border-radius: 5px; transition: width .35s ease; }
+    .hp-fill.pet { background: linear-gradient(90deg, #7bc47f, #b6e6a8); }
+    .hp-fill.mon { background: linear-gradient(90deg, #e56b6f, #ff9d7a); }
+    .hp-fill.low { background: linear-gradient(90deg, #e5405f, #ff7a7a); }
+    .hp-num { font-size: 10px; opacity: .75; text-align: right; }
+
+    /* ─── 3D stage ─── */
+    .stage { flex: 1; min-height: 0; position: relative; border-radius: 14px; overflow: hidden;
+             background: linear-gradient(180deg, rgba(255,255,255,.06), rgba(0,0,0,.25)); }
+    #arena3d { width: 100%; height: 100%; display: block; }
+    .vs-badge {
+        position: absolute; top: 8px; left: 50%; transform: translateX(-50%);
+        font-size: 10px; font-weight: 800; letter-spacing: .1em;
+        background: rgba(0,0,0,.4); padding: 3px 10px; border-radius: 999px;
+    }
+    .float {
+        position: absolute; font-weight: 800; font-size: 20px; pointer-events: none;
+        animation: floatUp 1s ease-out forwards; text-shadow: 0 2px 6px rgba(0,0,0,.6);
+    }
+    @keyframes floatUp {
+        0% { opacity: 1; transform: translateY(0) scale(.8); }
+        30% { transform: translateY(-14px) scale(1.15); }
+        100% { opacity: 0; transform: translateY(-52px) scale(1); }
+    }
+
+    /* ─── log ─── */
+    .log {
+        height: 62px; overflow-y: auto; font-size: 11px; line-height: 1.5;
+        background: rgba(0,0,0,.3); border-radius: 10px; padding: 6px 9px; flex-shrink: 0;
+    }
+    .log div { opacity: .85; }
+    .log .hit-mon { color: #b6e6a8; }
+    .log .hit-pet { color: #ffb3a7; }
+    .log .skill { color: var(--gold); font-weight: 700; }
+    .log .heal { color: #9ce0ff; }
+    .log .win { color: var(--ok); font-weight: 800; }
+    .log .lose { color: var(--danger); font-weight: 800; }
+
+    /* ─── actions ─── */
+    .actions { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; flex-shrink: 0; }
+    .actions button {
+        background: rgba(255,255,255,.1); border: 1px solid rgba(255,255,255,.16);
+        color: #f2f5f8; border-radius: 12px; padding: 9px 4px; cursor: pointer;
+        font-size: 10px; font-weight: 700; display: flex; flex-direction: column;
+        align-items: center; gap: 3px; transition: .12s; min-height: 52px;
+    }
+    .actions button .ico { font-size: 17px; }
+    .actions button:active:not(:disabled) { transform: scale(.94); }
+    .actions button:disabled { opacity: .34; cursor: default; }
+    .actions button.primary { background: rgba(247,215,116,.2); border-color: rgba(247,215,116,.5); }
+    .cd { font-size: 8px; opacity: .8; }
+
+    /* ─── result ─── */
+    .result {
+        position: absolute; inset: 0; background: rgba(10,14,22,.93);
+        display: none; flex-direction: column; align-items: center; justify-content: center;
+        gap: 8px; text-align: center; padding: 24px; z-index: 20; border-radius: 14px;
+    }
+    .result.show { display: flex; }
+    .result h1 { font-size: 26px; }
+    .result .reward { font-size: 15px; color: var(--gold); font-weight: 800; }
+    .result button {
+        margin-top: 10px; background: var(--gold); color: #4a3600; border: none;
+        padding: 11px 22px; border-radius: 12px; font-weight: 800; font-size: 14px; cursor: pointer;
+    }
+    .result .sub { font-size: 12px; opacity: .75; max-width: 280px; }
+    @media (max-height: 640px) {
+        .log { height: 46px; }
+        .actions button { min-height: 44px; }
+    }
+</style>
+</head>
+<body>
+<div class="arena">
+    <div class="bars">
+        <div>
+            <div class="who"><span class="nm" id="mon-name">—</span><span class="lv" id="mon-lv">Lv ?</span></div>
+            <div class="hp-track"><div class="hp-fill mon" id="mon-hp"></div></div>
+            <div class="hp-num" id="mon-hp-num"></div>
+        </div>
+    </div>
+
+    <div class="stage">
+        <canvas id="arena3d"></canvas>
+        <div class="vs-badge" id="vs-badge">ENCOUNTER</div>
+        <div class="result" id="result">
+            <h1 id="result-title">Victory!</h1>
+            <div class="reward" id="result-reward"></div>
+            <div class="sub" id="result-sub"></div>
+            <button id="result-close">Back to your pet</button>
+        </div>
+    </div>
+
+    <div class="bars">
+        <div>
+            <div class="who"><span class="nm" id="pet-name">Pet</span><span class="lv" id="pet-lv">Lv 1</span></div>
+            <div class="hp-track"><div class="hp-fill pet" id="pet-hp"></div></div>
+            <div class="hp-num" id="pet-hp-num"></div>
+        </div>
+    </div>
+
+    <div class="log" id="log"></div>
+    <div class="actions" id="actions"></div>
+</div>
+
+<script type="module">
+import * as THREE from './vendor/three.module.js';
+import { state } from './js/state.js';
+import { stats as petStatsOf, level as petLevel } from './js/rpg.js';
+import { byId, monstersForZone, bossForZone, buildMonster, MONSTERS } from './js/monsters.js';
+import { createBattle, playerAction, rewards, SKILLS } from './js/battle.js';
+import { buildPetModel } from './js/pet3d.js';
+
+const HANDOFF = "petpal.battle.result";
+const q = new URLSearchParams(location.search);
+const kind = q.get("kind") || "random";           // random | boss | daily
+const zone = q.get("zone") || state.scene || "home";
+
+/* Pick the monster. Anything unresolvable falls back to a zone-appropriate
+   regular so the screen can never open with nothing to fight. */
+function pickMonster() {
+    if (q.get("m")) { const m = byId(q.get("m")); if (m) return m; }
+    if (kind === "boss") { const b = bossForZone(zone); if (b) return b; }
+    if (kind === "daily") {
+        // deterministic per calendar day, so everyone's daily is the same fight
+        const day = Math.floor(Date.now() / 86400000);
+        const pool = MONSTERS.filter(m => m.tier >= 2);
+        return pool[day % pool.length] || MONSTERS[0];
+    }
+    const pool = monstersForZone(zone);
+    return pool[Math.floor(Math.random() * pool.length)];
+}
+
+const monster = pickMonster();
+const ps = petStatsOf();
+ps.name = state.name || "Your pet";
+
+// healing items come from the pet's own food inventory
+const items = [];
+for (const [id, n] of Object.entries(state.inventory || {})) {
+    for (let i = 0; i < Math.min(n, 3); i++) items.push({ id, name: id, icon: "🍎" });
+}
+
+const B = createBattle(ps, monster, { tricks: state.tricks || {}, items });
+const isBoss = !!monster.boss;
+const firstClear = isBoss && !(state.bossesCleared || []).includes(monster.id);
+
+document.getElementById("vs-badge").textContent =
+    kind === "daily" ? "DAILY CHALLENGE" : isBoss ? "★ BOSS ★" : "ENCOUNTER";
+
+/* ── 3D arena ── */
+let renderer, scene, camera, petG, monG, shake = 0, lungePet = 0, lungeMon = 0;
+const canvas = document.getElementById("arena3d");
+
+function init3d() {
+    try { renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true }); }
+    catch (e) { renderer = null; return false; }
+    renderer.setPixelRatio(Math.min(devicePixelRatio || 1, 2));
+    scene = new THREE.Scene();
+    camera = new THREE.PerspectiveCamera(42, 1, 0.1, 100);
+    camera.position.set(0, 1.6, 9.5);
+    camera.lookAt(0, 0.2, 0);
+
+    scene.add(new THREE.AmbientLight(0xffffff, 1.35));
+    const key = new THREE.DirectionalLight(0xffffff, 2.0); key.position.set(3, 6, 5); scene.add(key);
+    const rim = new THREE.DirectionalLight(0x88aaff, 1.0); rim.position.set(-4, 2, -3); scene.add(rim);
+
+    const floor = new THREE.Mesh(new THREE.CircleGeometry(9, 40),
+        new THREE.MeshStandardMaterial({ color: 0x2c3a4e, roughness: 1 }));
+    floor.rotation.x = -Math.PI / 2; floor.position.y = -1.5; scene.add(floor);
+
+    petG = buildPetModel(state.color || { body: "#c9e8b5", cheek: "#f4a8b3", outline: "#2d4a1f" }).group;
+    petG.position.set(-2.6, 0, 0.6);
+    petG.rotation.y = 0.75;                 // face the monster
+    petG.scale.setScalar(0.95);
+    scene.add(petG);
+
+    monG = buildMonster(THREE, monster);
+    monG.position.set(2.7, 0, -0.2);
+    monG.rotation.y = -0.6;
+    monG.scale.setScalar(isBoss ? 1.15 : 0.95);
+    scene.add(monG);
+
+    resize(); addEventListener("resize", resize);
+    requestAnimationFrame(loop);
+    return true;
+}
+
+function resize() {
+    if (!renderer) return;
+    const w = canvas.clientWidth || 320, h = canvas.clientHeight || 240;
+    renderer.setSize(w, h, false);
+    camera.aspect = w / h; camera.updateProjectionMatrix();
+}
+
+function loop(ts) {
+    requestAnimationFrame(loop);
+    if (!renderer) return;
+    const t = ts / 1000;
+    if (petG) {
+        petG.position.y = Math.sin(t * 2.2) * 0.07 + (B.pet.hp <= 0 ? -0.9 : 0);
+        petG.position.x = -2.6 + lungePet;
+        petG.rotation.z = B.pet.hp <= 0 ? 1.2 : Math.sin(t * 1.6) * 0.03;
+    }
+    if (monG) {
+        monG.position.y = Math.sin(t * 1.7 + 1) * 0.09 + (B.mon.hp <= 0 ? -0.9 : 0);
+        monG.position.x = 2.7 - lungeMon + (shake > 0 ? (Math.random() - 0.5) * 0.28 : 0);
+        monG.rotation.y = -0.6 + Math.sin(t * 0.9) * 0.12;
+        monG.rotation.z = B.mon.hp <= 0 ? -1.2 : 0;
+    }
+    lungePet *= 0.85; lungeMon *= 0.85; if (shake > 0) shake -= 0.06;
+    renderer.render(scene, camera);
+}
+
+function floatText(txt, side, colour) {
+    const el = document.createElement("div");
+    el.className = "float"; el.textContent = txt;
+    el.style.color = colour;
+    el.style.left = (side === "mon" ? 66 : 22) + "%";
+    el.style.top = "48%";
+    document.querySelector(".stage").appendChild(el);
+    setTimeout(() => el.remove(), 1000);
+}
+
+/* ── HUD ── */
+function bar(id, cur, max) {
+    const pct = Math.max(0, Math.round((cur / max) * 100));
+    const el = document.getElementById(id);
+    el.style.width = pct + "%";
+    el.classList.toggle("low", pct <= 25);
+}
+
+let shownLog = 0;
+function render() {
+    document.getElementById("mon-name").textContent = B.mon.name;
+    document.getElementById("mon-lv").textContent = "Lv " + B.mon.level;
+    document.getElementById("pet-name").textContent = B.pet.name;
+    document.getElementById("pet-lv").textContent = "Lv " + B.pet.level;
+    bar("mon-hp", B.mon.hp, B.mon.maxHp);
+    bar("pet-hp", B.pet.hp, B.pet.maxHp);
+    document.getElementById("mon-hp-num").textContent = `${B.mon.hp} / ${B.mon.maxHp}`;
+    document.getElementById("pet-hp-num").textContent = `${B.pet.hp} / ${B.pet.maxHp}`;
+
+    const logEl = document.getElementById("log");
+    for (; shownLog < B.log.length; shownLog++) {
+        const e = B.log[shownLog];
+        const d = document.createElement("div");
+        d.className = e.kind; d.textContent = e.text;
+        logEl.appendChild(d);
+    }
+    logEl.scrollTop = logEl.scrollHeight;
+    renderActions();
+}
+
+function renderActions() {
+    const el = document.getElementById("actions");
+    el.innerHTML = "";
+    const add = (ico, label, sub, disabled, primary, fn) => {
+        const b = document.createElement("button");
+        if (primary) b.className = "primary";
+        b.innerHTML = `<span class="ico">${ico}</span><span>${label}</span>` +
+                      (sub ? `<span class="cd">${sub}</span>` : "");
+        b.disabled = !!disabled || B.over;
+        b.onclick = fn;
+        el.appendChild(b);
+    };
+    add("⚔️", "Attack", "", false, true, () => act("attack"));
+    for (const id of B.skills) {
+        const s = SKILLS[id], cd = B.cooldowns[id] || 0;
+        add(s.emoji, s.name, cd ? `${cd} turn${cd > 1 ? "s" : ""}` : "", cd > 0, false, () => act("skill", id));
+    }
+    add("🍎", "Item", B.items.length ? `x${B.items.length}` : "none", !B.items.length, false, () => act("item", 0));
+    add("🏃", "Flee", isBoss ? "blocked" : "", isBoss, false, () => act("flee"));
+}
+
+function act(action, arg) {
+    if (B.over) return;
+    const petHpBefore = B.pet.hp, monHpBefore = B.mon.hp;
+    playerAction(B, action, arg);
+    const monLost = monHpBefore - B.mon.hp, petLost = petHpBefore - B.pet.hp;
+    if (monLost > 0) { floatText("-" + monLost, "mon", "#ffd7d7"); lungePet = 0.7; shake = 0.35; }
+    if (petLost > 0) { floatText("-" + petLost, "pet", "#ffb3a7"); lungeMon = 0.7; }
+    if (petLost < 0) floatText("+" + -petLost, "pet", "#9ce0ff");
+    render();
+    if (B.over) setTimeout(finish, 750);
+}
+
+/* ── finish: hand rewards back, never write the save file directly ──
+   The main window autosaves its whole in-memory state every 5 seconds. If this
+   tab wrote coins/XP into petpal.v4, the next autosave over there would
+   silently wipe them. So results go into a separate one-shot key that the main
+   window drains and deletes. */
+function finish() {
+    const r = rewards(B, firstClear);
+    const payload = {
+        at: Date.now(), monsterId: monster.id, monsterName: monster.name,
+        won: B.won, fled: B.fled, boss: isBoss, kind,
+        xp: r.xp, coins: r.coins, firstClear: r.firstClear,
+    };
+    try {
+        const queue = JSON.parse(localStorage.getItem(HANDOFF) || "[]");
+        queue.push(payload);
+        localStorage.setItem(HANDOFF, JSON.stringify(queue));
+    } catch (e) { /* private mode — the fight still happened, just unrewarded */ }
+
+    const res = document.getElementById("result");
+    document.getElementById("result-title").textContent =
+        B.fled ? "Got away" : B.won ? (isBoss ? "BOSS DEFEATED!" : "Victory!") : "Defeated…";
+    document.getElementById("result-reward").textContent =
+        r.xp || r.coins ? `+${r.xp} XP   +${r.coins} 💰` : "No rewards";
+    document.getElementById("result-sub").textContent =
+        r.firstClear ? "First clear bonus — doubled!" :
+        B.fled ? "No rewards for running." :
+        B.won ? "" : "You still learned something from the loss.";
+    res.classList.add("show");
+}
+
+document.getElementById("result-close").onclick = () => {
+    if (window.opener && !window.opener.closed) { try { window.opener.focus(); } catch (e) {} }
+    window.close();
+    // window.close() is ignored for tabs the script didn't open
+    setTimeout(() => { location.href = "./index.html"; }, 150);
+};
+
+if (!init3d()) {
+    document.querySelector(".stage").insertAdjacentHTML("beforeend",
+        `<div style="position:absolute;inset:0;display:flex;align-items:center;
+         justify-content:center;font-size:13px;opacity:.7;">3D unavailable — fighting blind!</div>`);
+}
+render();
+</script>
+</body>
+</html>
