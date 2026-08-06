@@ -205,10 +205,16 @@ export function playerAction(b, action, arg) {
 export function rewards(b, firstClear) {
     if (!b.over || b.fled) return { xp: 0, coins: 0, firstClear: false };
     const m = b.mon;
-    if (!b.won) return { xp: Math.round(m.xp * 0.25), coins: 0, firstClear: false };
+    /* Hunt is the always-available, on-demand way to get into a fight.
+       Ambient encounters while exploring are rarer and pay full XP, so Hunt
+       pays 70% — on every fight, win or lose — rather than being strictly
+       better than just wandering around. Coins are untouched; only XP is
+       cut, per how this was asked for. */
+    const huntCut = b.kind === "hunt" ? 0.7 : 1;
+    if (!b.won) return { xp: Math.round(m.xp * 0.25 * huntCut), coins: 0, firstClear: false };
     const bonus = firstClear && m.boss ? 2 : 1;
     return {
-        xp: Math.round(m.xp * bonus),
+        xp: Math.round(m.xp * bonus * huntCut),
         coins: Math.round(m.coins * bonus),
         firstClear: !!(firstClear && m.boss),
     };

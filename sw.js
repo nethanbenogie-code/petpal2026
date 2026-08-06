@@ -6,7 +6,7 @@
    stored. After the split into ES modules, every existing install would
    otherwise have gone on serving the old monolithic index.html forever and
    never fetched js/main.js at all. */
-const CACHE = "petpal-v12";
+const CACHE = "petpal-v14";
 const ASSETS = [
   "./",
   "./index.html",

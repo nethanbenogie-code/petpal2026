@@ -18,7 +18,11 @@ No build step and no npm install — the only dependency is three.js, vendored i
   see [Levels](#levels)
 - **Turn-based battles** against 32 monsters and bosses, all modelled in 3D —
   see [Battles](#battles)
-- Six needs that drain continuously: Full, Hydration, Clean, Rest, Fun, Health
+- **Equippable weapons** with signature battle skills, including two ranged
+  ones — see [Weapons](#weapons)
+- Six needs that drain continuously: Full, Hydration, Clean, Rest, Fun, Health.
+  Rest (`energy`) drains at half its original rate — a full bar now lasts
+  ~67 minutes awake, ~33 at night, twice the original pace
 - Moods driven by those stats, with matching faces and animations
 - Personality traits (playful, affectionate, talkative, curious, independent) that
   shift based on how you treat it
@@ -47,7 +51,8 @@ No build step and no npm install — the only dependency is three.js, vendored i
 **Extras**
 - Journal with notes, appointments, contacts and diary entries
 - Camera that snapshots the pet and its scene into a gallery
-- Built-in arcade: Tetris, Galactica and Snake
+- Built-in arcade: Tetris, Galactica and Snake, all played with one shared
+  on-screen joystick — see [Arcade controls](#arcade-controls)
 - Installable as a PWA and fully playable offline
 
 ---
@@ -209,9 +214,12 @@ decor stay visible behind them — your actual pet model facing an actual monste
 model, in the park, in the rain, in space.
 
 **Starting a fight**
-- **⚔️ Hunt** — seek out a monster themed to wherever you are
+- **⚔️ Hunt** — seek out a monster themed to wherever you are, on demand.
+  Pays **70% of the usual XP**, win or lose — it's the reliable button-press
+  option, so it's deliberately worth less than the next one
 - **Random encounters** while exploring away from home (roughly one per couple
-  of minutes outdoors, never twice within three minutes)
+  of minutes outdoors, never twice within three minutes) — full XP, since
+  these are rarer and unplanned
 - **⚙ Menu → ★ Zone boss** — one boss per zone; first clear pays double
 - **⚙ Menu → 🗓 Daily challenge** — one escalating fight a day, the same monster
   for everyone on a given date
@@ -232,8 +240,49 @@ are real fights ending near 28% HP; bosses sit around 30% and run 15+ turns. A
 pet that has learned no tricks wins only ~12% against tier 2 — training is
 supposed to matter.
 
-Losing costs nothing but pride and pays a quarter of the XP. Fleeing pays
-nothing.
+Losing costs nothing but pride and pays a quarter of the XP (also cut to 70%
+for Hunt). Fleeing pays nothing.
+
+## Weapons
+
+Eight weapons in **🛍 Shop → 🗡 Arms**, each with a signature battle skill that
+exists only while it is equipped — Slash, Rend, Guard Break, Quake, Zap, Beam,
+Starfall. Two carry mechanics nothing else has: **⚡ Zap** has a 50% chance to
+stun, costing the monster its whole turn, and **🔆 Beam** ignores armour
+completely — measured at 2.79x damage against the most armoured monster in the
+game versus 1.78x against the softest.
+
+Zap and Beam are the two **ranged** weapons — real geometry fired across the
+arena instead of a melee lunge. Zap forks three jittered lightning strands at
+the monster and flashes on impact; Beam swings a solid cylinder onto the line
+of fire with a muzzle flare and an impact burst. Effects are timed meshes
+added straight to the battle scene and torn down on their own clock, so a
+fight that ends mid-flash cleans up with it — verified with nothing left
+behind even when the battle is closed abruptly while a bolt is still in the
+air. They are built from primitives like everything else and are held in the
+pet's hand in the arena.
+
+Bonuses are **percentages of the pet's own stats, never flat numbers**. Flat
+values were tried first and broke exactly as the monsters did before they were
+re-anchored: +18 attack is enormous beside a level-25 pet's 43 and trivial
+beside a level-100 pet's 155, so the same Warhammer measured 82% against a boss
+at L25 and 62% at L60. Percentages make one balance pass hold at every level.
+
+Measured win rates, flat from level 10 to 100:
+
+| | tier 1 | tier 2 | tier 3 | boss |
+| --- | --- | --- | --- | --- |
+| bare hands | 100% | 80% | 45% | 7% |
+| Wooden Sword | 100% | 97% | 86% | 15% |
+| Iron Claws | 100% | 99% | 100% | 18% |
+| Warhammer | 100% | 100% | 100% | 50% |
+| Zap Rod | 100% | 99% | 97% | 27% |
+| Laser Blaster | 100% | 100% | 100% | 64% |
+| Star Blade | 100% | 100% | 100% | 81% |
+
+(Table is for regular monster tiers and bosses at full ambient/random XP —
+the win-rate mechanics are identical when fighting via Hunt, only the XP
+payout differs.)
 
 ## Arcade controls
 
@@ -294,11 +343,13 @@ js/
   media.js        camera and gallery, Hunt
   actions.js      feed, water, bath, play, park, pet, heal, sleep
   chat.js         messages, vocabulary, replies, contacts-by-chat
+  calendar.js     events/reminders by chat, and the notifications that fire
   tricks.js       teaching and performing tricks
-  shop.js         food, accessories, playmates
+  shop.js         food, accessories, playmates, weapons
   minigames.js    Catch, arcade launcher
   journal.js      notifications, modals, notes/appts/contacts/diary
   shooter.js      in-app Twin-Bee style shooter
+  joystick.js     reusable round D-pad widget, used by games.html
   menu.js         settings menu
   pet3d.js        three.js pet model, animation and face
   rpg.js          XP curve, levels 1–100, derived combat stats
@@ -311,7 +362,10 @@ js/
 vendor/
   three.module.js three.js r185 (ESM entry, re-exports the core)
   three.core.js   its sibling — three.module.js is useless without it
-battle.html       the battle screen — its own window, 3D arena
+battle.html       standalone battle screen, its own window — superseded by
+                  in-stage battles (battleui.js) but still works if opened
+                  directly; kept for compatibility, precached, no live link
+                  to it from the main UI
 games.html        standalone arcade (Tetris, Galactica, Snake)
 sw.js             service worker, cache-first for offline play
 manifest.json     PWA manifest
@@ -380,8 +434,6 @@ There's no toolchain, so a few things are easy to get wrong:
 - **Dusk, Dawn and Night can't be chosen manually.** They appear in the location
   picker but no rule ever unlocks them, so they stay at 🔒. They still show up on
   their own via the day/night cycle.
-- **`games.html` isn't precached** by the service worker, so the arcade needs one
-  online visit before it works offline.
 - The Photo feature checks for `html2canvas` but the library isn't bundled, so
   snapshots always use the built-in canvas fallback.
 
@@ -399,41 +451,3 @@ degrade quietly where unsupported.
 ## License
 
 Not yet specified — add one before publishing if you want others to reuse it.
-
-## Weapons
-
-Eight weapons in **🛍 Shop → 🗡 Arms**, each with a signature battle skill that
-exists only while it is equipped — Slash, Rend, Guard Break, Quake, Zap, Beam,
-Starfall. Two carry mechanics nothing else has: **⚡ Zap** has a 50% chance to
-stun, costing the monster its whole turn, and **🔆 Beam** ignores armour
-completely — measured at 2.79x damage against the most armoured monster in the
-game versus 1.78x against the softest.
-
-Zap and Beam are the two **ranged** weapons — real geometry fired across the
-arena instead of a melee lunge. Zap forks three jittered lightning strands at
-the monster and flashes on impact; Beam swings a solid cylinder onto the line
-of fire with a muzzle flare and an impact burst. Effects are timed meshes
-added straight to the battle scene and torn down on their own clock, so a
-fight that ends mid-flash cleans up with it — verified with nothing left
-behind even when the battle is closed abruptly while a bolt is still in the
-air.
-They are built from primitives like everything else and are held in the pet's
-hand in the arena.
-
-Bonuses are **percentages of the pet's own stats, never flat numbers**. Flat
-values were tried first and broke exactly as the monsters did before they were
-re-anchored: +18 attack is enormous beside a level-25 pet's 43 and trivial
-beside a level-100 pet's 155, so the same Warhammer measured 82% against a boss
-at L25 and 62% at L60. Percentages make one balance pass hold at every level.
-
-Measured win rates, flat from level 10 to 100:
-
-| | tier 1 | tier 2 | tier 3 | boss |
-| --- | --- | --- | --- | --- |
-| bare hands | 100% | 80% | 45% | 7% |
-| Wooden Sword | 100% | 97% | 86% | 15% |
-| Iron Claws | 100% | 99% | 100% | 18% |
-| Warhammer | 100% | 100% | 100% | 50% |
-| Zap Rod | 100% | 99% | 97% | 27% |
-| Laser Blaster | 100% | 100% | 100% | 64% |
-| Star Blade | 100% | 100% | 100% | 81% |

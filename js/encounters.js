@@ -93,7 +93,7 @@ export function huntFight() {
     const zone = state.scene || "home";
     const pool = monstersForZone(zone);
     const mon = pool[Math.floor(Math.random() * pool.length)];
-    promptFight(mon, "random", zone, `You track down a ${mon.name}!`);
+    promptFight(mon, "hunt", zone, `You track down a ${mon.name}!`);
 }
 
 export function bossFight() {
@@ -123,7 +123,8 @@ export function dailyFight() {
 export function promptFight(mon, kind, zone, line) {
     const L = petLevel();
     const preview = mon ? scaleMonster(mon, L) : null;
-    openModal(kind === "boss" ? "★ Boss" : kind === "daily" ? "🗓 Daily challenge" : "⚔️ Encounter!", `
+    openModal(kind === "boss" ? "★ Boss" : kind === "daily" ? "🗓 Daily challenge" :
+        kind === "hunt" ? "🏹 Hunt" : "⚔️ Encounter!", `
       <p style="font-size:13px; margin-bottom:6px;">${line}</p>
       ${preview ? `<p style="font-size:12px; color:#888;">
          Lv ${preview.level} · ❤️ ${preview.maxHp} · ⚔️ ${preview.atk} · 🛡 ${preview.def}<br>

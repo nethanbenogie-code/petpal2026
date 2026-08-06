@@ -12,7 +12,11 @@ import { speak } from './ui.js';
 const STORAGE_KEY = "petpal.v4";
 const STAT_KEYS = ["hunger", "thirst", "clean", "energy", "fun", "health"];
 const STAT_LABELS = { hunger: "Full", thirst: "Hydra", clean: "Clean", energy: "Rest", fun: "Fun", health: "Health" };
-const DRAIN = { hunger: 0.08, thirst: 0.12, clean: 0.05, energy: 0.05, fun: 0.06, health: 0.01 };
+/* energy (the "Rest" stat) was 0.05 — halved on request so Rest lasts twice
+   as long before the pet gets tired. The night-time ×2 multiplier in main.js
+   tick() is relative to this base rate, so halving it here doubles time-to-
+   empty at night too, not just during the day. */
+const DRAIN = { hunger: 0.08, thirst: 0.12, clean: 0.05, energy: 0.025, fun: 0.06, health: 0.01 };
 
 const STAGES = [
     { name: "Egg", until: 0.02, size: 0.55 },

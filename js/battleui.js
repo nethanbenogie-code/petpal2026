@@ -288,7 +288,8 @@ export function startBattle(monsterSpec, kind, done) {
     stage.classList.add("battling");
     layer.classList.add("show");
     $("battle-kind").textContent =
-        B.kind === "daily" ? "DAILY CHALLENGE" : monsterSpec.boss ? "★ BOSS ★" : "ENCOUNTER";
+        B.kind === "daily" ? "DAILY CHALLENGE" : monsterSpec.boss ? "★ BOSS ★" :
+        B.kind === "hunt" ? "HUNT (70% XP)" : "ENCOUNTER";
     $("blog").innerHTML = "";
     shownLog = 0;
     chirp("beep");
