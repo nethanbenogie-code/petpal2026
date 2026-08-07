@@ -9,6 +9,7 @@ import { AFFECTION_WORDS, BAD_WORDS, GREETING_WORDS, QUESTIONS, STOPWORDS, getMo
 import { finishTraining, performTrick } from './tricks.js';
 import { chirp, log, speak } from './ui.js';
 import { tryEventCommand } from './calendar.js';
+import { tryCalcCommand } from './calc.js';
 /* ─── CHAT ─── */
 /* ─── CONTACTS OVER CHAT ──────────────────────────────────────────
    Saves and reads back a name / number / address through the chat box,
@@ -280,6 +281,16 @@ function handleUserMessage(rawText) {
         save();
         chirp("beep");
         setTimeout(() => speak(eventReply, 7000), 300);
+        return;
+    }
+
+    // Arithmetic never needs to reach learn() either — "twelve" or "plus"
+    // becoming part of the pet's vocabulary would be a strange thing for it
+    // to start saying back at random.
+    const calcReply = tryCalcCommand(text);
+    if (calcReply) {
+        chirp("beep");
+        setTimeout(() => speak(calcReply, 4500), 300);
         return;
     }
 

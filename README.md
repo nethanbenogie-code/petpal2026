@@ -47,6 +47,7 @@ No build step and no npm install — the only dependency is three.js, vendored i
 - Optional speech synthesis (it talks back) and voice input (speech recognition)
 - Save and recall contacts by chatting — see [Contacts by chat](#contacts-by-chat)
 - Schedule events and get reminded by chatting — see [Calendar by chat](#calendar-by-chat)
+- Do arithmetic by chatting, in digits, words, or a mix — see [Calculator by chat](#calculator-by-chat)
 
 **Extras**
 - Journal with notes, appointments, contacts and diary entries
@@ -54,6 +55,9 @@ No build step and no npm install — the only dependency is three.js, vendored i
 - Built-in arcade: Tetris, Galactica and Snake, all played with one shared
   on-screen joystick — see [Arcade controls](#arcade-controls)
 - Installable as a PWA and fully playable offline
+- Backup and restore the whole save as a file — see [Your data](#your-data)
+- Inspirational quotes, filtered to keep out politics and anything
+  rebellion-adjacent — see [Inspirational quotes](#inspirational-quotes)
 
 ---
 
@@ -181,6 +185,45 @@ reopened if it wasn't. Only appointments with a time ping — a date alone is a
 day marker, not an alarm. If **⚙ Menu → 🔔 Notifications** is on, a real
 system notification fires too, so it reaches you even in another tab.
 
+## Calculator by chat
+
+```
+1+1
+one + 1
+1 plus 1
+one plus one
+1 plus one
+five minus two
+4 times 3          seven times eight
+10 / 2             ten divided by 2          9 over 3
+what is 5 + 5      calculate 12 times 12
+one hundred and twenty three plus 1
+```
+
+Understands `+ - * x × / ÷` and their word forms (plus, minus, times,
+divided by, over, multiplied by, subtracted by, added to), number words up
+to millions ("one hundred and twenty three"), decimals, and an optional
+leading "what is" / "calculate" / "how much is". Dividing by zero gets a
+reply instead of `Infinity`; `0.1 + 0.2` correctly shows `0.3`, not floating-
+point noise.
+
+The whole trimmed message has to be exactly `number operator number` — a
+number or operator word inside a longer sentence never triggers it, so
+"I have 2 dogs and 1 cat" stays a sentence, not `2 + 1`.
+
+The trickiest part was the hyphen: it's both the joiner in "twenty-one" and
+the minus sign in "5-3", and a tight `number-number` also matches a phone
+number. Hyphens are only treated as a word-joiner when they sit between an
+actual tens-word and ones-word (built straight from that vocabulary, so a
+digit can never trigger it); a *tight, unspaced* hyphen-minus is refused
+outright when either side is 1000 or more, which blocks `555-1234` and
+`2024-08-07` while still allowing `100-50`. Verified against 11 realistic
+false-positive phrasings — phone numbers, dates, page ranges, "she is 25
+years old", "the score was 2-1" — all correctly ignored.
+
+Calculator text skips the vocabulary learner, same as contacts and calendar
+text — "plus" becoming something the pet says back at random would be odd.
+
 ## Levels
 
 Two progressions run side by side and they are **not** the same thing:
@@ -292,6 +335,51 @@ hard drop, so the whole game plays from one control. `js/joystick.js` is a
 small reusable widget (Pointer Events, so a drag survives your thumb sliding
 off the knob) that any future game in the arcade can reuse.
 
+## Inspirational quotes
+
+**⚙ Menu → 💭 Inspiration** shows a quote, with an "Another" button to cycle
+and a "Say it" button that has the pet speak it aloud (if voice is on). 18
+quotes are bundled into the app itself, so this works from first launch with
+zero network calls — **🔄 Get more quotes** is the one and only place in the
+whole app that reaches out to the internet, and only when you tap it.
+
+It pulls a public, MIT-licensed [quotes dataset](https://github.com/dwyl/quotes)
+from `raw.githubusercontent.com` — chosen after checking two more
+"official-sounding" quote APIs first and finding neither actually usable:
+`api.quotable.io` no longer resolves at all, and `zenquotes.io` sends no
+`Access-Control-Allow-Origin` header, so a browser `fetch()` from this app
+would be silently blocked by CORS even though the API itself is up. GitHub's
+raw file host sends permissive CORS unconditionally, confirmed before writing
+any code against it.
+
+Every quote — bundled or fetched — passes through the same two-layer filter
+before it can ever be shown or cached:
+
+- an **author blocklist** (Trump, Obama, Gandhi, MLK, Churchill, Thomas
+  Paine, Napoleon, and around two dozen more historical and political
+  figures) — because a quote's political charge often comes from *who* said
+  it, not the specific words. "Freedom is what you do with what's been done
+  to you" reads as completely generic, but it's Jean-Paul Sartre; "The most
+  formidable weapon against errors of every kind is reason" is Thomas
+  Paine — both pass on text alone and are only caught because the author is
+  checked as its own, independent signal
+- a **word-boundary keyword filter** over the quote text for politics/war/
+  rebellion vocabulary (government, revolution, uprising, regime, protest,
+  army, weapon, tyranny, and similar)
+
+Verified against the real, live 1,655-quote dataset before shipping, not
+just reasoned about: a first-draft version of the keyword filter matched
+substrings rather than words, so "king" fired inside "thinking" and "nation"
+fired inside "imagination" — fixed with proper `\b` word boundaries.
+1,523 of 1,655 quotes (92%) pass; every quote by a blocklisted author is
+correctly rejected even on lines with no flagged words at all, and the
+control quotes used to check for over-filtering came through clean.
+
+Fetched quotes are capped at 250 cached (oldest dropped first) to keep
+`localStorage` bounded, deduplicated against what's already saved, and nothing
+that fails the filter is ever written to state — the filtering happens once,
+at fetch time, on the raw response.
+
 ## Locations
 
 Reached from **⚙ Menu → 📍 Locations**. Park also has its own button in the action bar.
@@ -318,8 +406,11 @@ while the pet sleeps.
 ## Your data
 
 Everything lives in `localStorage` under the key `petpal.v4`, on your device only.
-Nothing is uploaded and there are no network requests at runtime — every asset,
-three.js included, is served from this folder.
+Nothing is ever uploaded. The app makes **one** kind of outbound network request,
+and only when you explicitly trigger it: tapping **🔄 Get more quotes** in
+[Inspirational quotes](#inspirational-quotes) fetches a public quotes file from
+GitHub. Every other asset, three.js included, is served from this folder, and
+nothing else in the app ever calls out to the network.
 
 Worth knowing: once you start saving contacts, that key holds real personal
 information in plain text. It rides along in any browser profile backup, and
@@ -327,6 +418,21 @@ clearing site data for the page erases the pet along with it. **⚙ Menu → �
 pet** wipes it deliberately.
 
 If voice is enabled, retrieved phone numbers are read aloud by speech synthesis.
+
+**⚙ Menu → 💾 Backup data** downloads the entire save as a `.json` file —
+everything: stats, level, XP, coins, contacts, appointments, tricks, gear,
+photos, journal. **⚙ Menu → 📂 Restore backup** loads one back, after showing
+which pet is in the file (name, XP, coins, when it was backed up) and an
+explicit confirm, since it replaces whatever is currently loaded. A file that
+isn't valid JSON, or is valid but clearly isn't a PetPal save, is rejected
+with a plain message rather than silently doing something with it.
+
+Restore goes through the exact same `localStorage` write + full page reload
+that **Reset pet** already used, rather than patching the running `state`
+object in place — a reload re-runs every module's own setup from scratch, so
+there's nothing left over from the pet you had a moment ago (cached redraw
+signatures, the wander loop's target, the 3D model) still assuming the old
+one's shape.
 
 ---
 
@@ -344,6 +450,9 @@ js/
   actions.js      feed, water, bath, play, park, pet, heal, sleep
   chat.js         messages, vocabulary, replies, contacts-by-chat
   calendar.js     events/reminders by chat, and the notifications that fire
+  calc.js         the chat calculator — digits, number-words, mixed forms
+  backup.js       export the save to a file, and restore from one
+  quotes.js       bundled + fetched inspirational quotes, and the content filter
   tricks.js       teaching and performing tricks
   shop.js         food, accessories, playmates, weapons
   minigames.js    Catch, arcade launcher

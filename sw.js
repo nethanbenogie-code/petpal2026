@@ -6,7 +6,7 @@
    stored. After the split into ES modules, every existing install would
    otherwise have gone on serving the old monolithic index.html forever and
    never fetched js/main.js at all. */
-const CACHE = "petpal-v14";
+const CACHE = "petpal-v16";
 const ASSETS = [
   "./",
   "./index.html",
@@ -40,6 +40,9 @@ const ASSETS = [
   "./js/weapons.js",
   "./js/joystick.js",
   "./js/calendar.js",
+  "./js/backup.js",
+  "./js/quotes.js",
+  "./js/calc.js",
   // ~2.1 MB unminified. Precached so the 3D pet survives going offline; if that
   // is too heavy for your hosting, drop these two and three.js will simply fail
   // to load offline, which start() already handles by falling back to the SVG.

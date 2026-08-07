@@ -8,6 +8,8 @@ import { updateUI } from './main.js';
 import { openGallery } from './media.js';
 import { levelPanelHtml } from './rpg.js';
 import { bossFight, dailyFight } from './encounters.js';
+import { exportBackup, importBackupFlow } from './backup.js';
+import { openQuotes } from './quotes.js';
 import { changeLocation } from './petmove.js';
 import { updateScene } from './scene.js';
 import { ACHIEVEMENTS, LOCATIONS, STORAGE_KEY, ageInHours, save, state } from './state.js';
@@ -46,12 +48,15 @@ function openMenu() {
       <button class="menu-item" id="m-boss"><span>★ Zone boss</span><span class="arrow">›</span></button>
       <button class="menu-item" id="m-daily-battle"><span>🗓 Daily challenge</span><span class="arrow">›</span></button>
       <button class="menu-item" id="m-level"><span>📊 Level & stats</span><span class="arrow">›</span></button>
+      <button class="menu-item" id="m-quotes"><span>💭 Inspiration</span><span class="arrow">›</span></button>
       <button class="menu-item" id="m-personality"><span>🧠 Personality</span><span class="arrow">›</span></button>
       <button class="menu-item" id="m-vocab"><span>📖 Vocabulary</span><span class="arrow">›</span></button>
       <button class="menu-item" id="m-tricks"><span>🎓 Tricks</span><span class="arrow">›</span></button>
       <button class="menu-item" id="m-achievements"><span>🏆 Achievements</span><span class="arrow">›</span></button>
       <button class="menu-item" id="m-gallery"><span>📸 Gallery (${state.photos.length})</span><span class="arrow">›</span></button>
       <button class="menu-item" id="m-daily"><span>🌅 Daily reward</span><span class="arrow">›</span></button>
+      <button class="menu-item" id="m-backup"><span>💾 Backup data</span><span class="arrow">›</span></button>
+      <button class="menu-item" id="m-restore"><span>📂 Restore backup</span><span class="arrow">›</span></button>
       <button class="menu-item" id="m-reset" style="color: var(--danger);"><span>🗑 Reset pet</span><span class="arrow">›</span></button>
     </div>
   `);
@@ -101,6 +106,7 @@ function openMenu() {
             updateScene();
             openMenu();
         };
+        document.getElementById("m-quotes").onclick = () => { openQuotes(); };
         document.getElementById("m-boss").onclick = () => { closeModal(); bossFight(); };
         document.getElementById("m-daily-battle").onclick = () => { closeModal(); dailyFight(); };
         document.getElementById("m-level").onclick = () => {
@@ -191,6 +197,8 @@ function openMenu() {
                 };
             }, 50);
         };
+        document.getElementById("m-backup").onclick = () => { closeModal(); exportBackup(); };
+        document.getElementById("m-restore").onclick = () => { closeModal(); importBackupFlow(); };
         document.getElementById("m-reset").onclick = () => {
             openModal("🗑 Reset?", `
         <p>Really reset your pet? All progress, memories, coins, notes, and photos will be lost.</p>

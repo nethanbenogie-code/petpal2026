@@ -197,6 +197,8 @@ const DEFAULT_STATE = () => ({
     xp: 0,
     levelAnnounced: 1,
     bossesCleared: [],          // boss ids beaten, for the first-clear bonus
+    quotePack: [],               // filtered quotes fetched via the Quotes panel
+    quotePackFetchedAt: 0,
     lastDailyBattle: 0,
     encountersOn: true,         // random fights while exploring
 });
